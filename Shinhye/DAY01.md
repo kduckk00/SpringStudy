@@ -694,7 +694,7 @@ public class LgTV implements TV {
 
 
 
-# CLASS06 비즈니스 컴포넌트 실습1
+# CLASS06 비즈니스 컴포넌트 실습
 
 - 일반적으로 비즈니스 컴포넌트는 4개의 자바 파일로 구성
 - ex) BOARD테이블 관련된 BoardService컴포넌트에 대한 클래스 
@@ -732,3 +732,35 @@ public class LgTV implements TV {
 - CRUD(Create, Read, Update, Delete) 기능의 메소드 구현필요
   - JDBC드라이버 필요
 
+- 이 클래스 객체를 스프링 컨테이너가 생성할 수 있도록 `@Repository`어노테이션 설정
+- 독립된 클래스로 구현되어야 함(implements X)
+
+
+
+|   기능    |      메소드 이름       |
+| :-------: | :--------------------: |
+|   등록    |     insert테이블명     |
+|   수정    |     update테이블명     |
+|   삭제    |     delete테이블명     |
+| 상세 조회 |   get/select테이블명   |
+| 목록 검색 | get/select테이블명List |
+
+
+
+## Service 인터페이스
+
+- DAO클래스에서 `Alt + Shift + T`통해 Service 인터페이스 작성
+  - 이때, DAO에 생성되는 implements지우기
+
+
+
+## Service 구현 클래스
+
+- Service 인터페이스를 구현한 ServiceImpl클래스
+  - Service인터페이스에서 구현한 모든 추상 메소드 재정의(Overriding)필요
+- 멤버변수로 선언된 BoardDAO 이용
+  - DB연동이 포함된 비즈니스 로직 처리 위함
+
+
+
+![image-20210205043420646](images/image-20210205043420646.png)
