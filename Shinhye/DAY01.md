@@ -175,11 +175,11 @@ public class TVUser {
 
 ### 1. BeanFactory
 
-- <bean>객체 생성, 관리
+- `<bean>`객체 생성, 관리
   - 가장 기본적 컨테이너 기능 제공
 
 - 지연로딩(Lazy Loading) 방식
-  - **클라리언트의 요청**에 의해서만 **<bean>객체 생성**
+  - **클라리언트의 요청**에 의해서만**`<bean>`객체 생성**
 - <u>일반적 스프링 프로젝트에서 사용할 일 거의 없음</u>
 
 
@@ -187,11 +187,11 @@ public class TVUser {
 ### 2. ApplicationContext
 
 - BenaFactory 기능 포함
-  - <bean>객체 생성, 관리
+  - `<bean>`객체 생성, 관리
 - 트랜잭션 관리
 - 메시지 기반의 다국어 처리
 - 즉시로딩(pre-loading) 방식
-  - **컨테이너가 구동되는 시점**에 <bean>에 등록된 **클래스 객체 생성**
+  - **컨테이너가 구동되는 시점**에 `<bean>`에 등록된 **클래스 객체 생성**
 
 
 
@@ -211,16 +211,16 @@ public class TVUser {
 
 # 스프링 컨테이너
 
->XML설정 파일 참조해 <bean> 의 생명주기 관리
+>XML설정 파일 참조해` <bean> `의 생명주기 관리
 
-- XML 설정파일 = <bean> 저장소
+- XML 설정파일 = `<bean> `저장소
 - 객체의 생성과 의존관계를 컨테이너가 자동으로 관리
 
 
 
 ## `<beans>`<u>루트</u> 엘리먼트
 
-- <beans>를 루트 엘리먼트로 사용
+- `<beans>`를 루트 엘리먼트로 사용
 - 네임스페이스, 스키마 문서 위치 등록 가능
 
 
@@ -244,7 +244,7 @@ public class TVUser {
 #### id속성
 
 - 생략 가능
-- <bean>객체를 위한 이름을 지정할 때 사용하는 속성
+- `<bean>`객체를 위한 이름을 지정할 때 사용하는 속성
 - 스프링 컨테이너가 생성한 객체들 사이에서 유일해야 함
 - 자바 식별자 작성 규칙
 - 낙타표기법 사용
@@ -268,7 +268,7 @@ public class TVUser {
 <bean id="tv" class="polymorphism.SamsungTV" init-method="initMethod" />
 ```
 
-- 스프링 컨테이너는 <bean>등록된 클래스 객체를 생성한 후, init-method속성으로 지정된 `initMethod()`메소드 호출
+- 스프링 컨테이너는 `<bean>`등록된 클래스 객체를 생성한 후, init-method속성으로 지정된 `initMethod()`메소드 호출
 
 
 
@@ -287,10 +287,10 @@ public class TVUser {
 
 #### lazy-init 속성
 
-- 해당 <bean>이 <u>사용되는 시점에 객체를 생성하는 속성</u>
+- 해당 `<bean>`이 <u>사용되는 시점에 객체를 생성하는 속성</u>
   - ApplicationContext이용해 컨테이너 구동시 즉시 로딩방식으로 동작
-    - 자주 사용되지 않는 <bean>은 많은 메모리 차지하기 때문
-- true설정 : 클라이언트 요청 시, <bean>생성
+    - 자주 사용되지 않는 `<bean>`은 많은 메모리 차지하기 때문
+- true설정 : 클라이언트 요청 시, `<bean>`생성
 - 효율적 메모리 관리 
 
 ```xml
@@ -343,7 +343,7 @@ public class TVUser {
 
 
 - `scope="prototype"`
-  - <bean>이 요청될 때마다 매번 새로운 객체 생성해 반환
+  - `<bean>`이 요청될 때마다 매번 새로운 객체 생성해 반환
 
 ```xml
 <bean id="tv" class="polymorphism.SamsungTV" scope="prototype" />
@@ -492,9 +492,9 @@ public class TVUser {
 
 | 인터페이스 |                             설명                             |                       구현 클래스                       |
 | :--------: | :----------------------------------------------------------: | :-----------------------------------------------------: |
-|  List<E>   |        순서가 있는 데이터 집합 <br />데이터 중복 허용        | Vector, ArrayList, <br />LinkedList, <br />Stack, Queue |
-|   Set<E>   |        순서 없는 데이터 집합 <br />데이터 중복 허용X         |                    HashSet, TreeSet                     |
-|  Map<K,V>  | 키, 값의 한쌍으로 이뤄진 데이터 집합 <br />순서 X <br />키는 중복허용X, 값은 중복가능 |      HashMap, TreeMap,<br /> Hashtable, Properties      |
+| `List<E>`  |        순서가 있는 데이터 집합 <br />데이터 중복 허용        | Vector, ArrayList, <br />LinkedList, <br />Stack, Queue |
+|  `Set<E>`  |        순서 없는 데이터 집합 <br />데이터 중복 허용X         |                    HashSet, TreeSet                     |
+| `Map<K,V>` | 키, 값의 한쌍으로 이뤄진 데이터 집합 <br />순서 X <br />키는 중복허용X, 값은 중복가능 |      HashMap, TreeMap,<br /> Hashtable, Properties      |
 
 - ex)
 
@@ -512,12 +512,12 @@ HashMap<Integer, String> hashMap = new HashMap<Integer, String>();
 
 ## 컬렉션 유형
 
-|      컬렉션유형      | 엘리먼트 |
-| :------------------: | :------: |
-| java.util.List, 배열 |  <list>  |
-|    java.util.Set     |  <set>   |
-|    java.util.Map     |  <map>   |
-| java.util.Properties | <props>  |
+|      컬렉션유형      | 엘리먼트  |
+| :------------------: | :-------: |
+| java.util.List, 배열 | `<list>`  |
+|    java.util.Set     |  `<set>`  |
+|    java.util.Map     |  `<map>`  |
+| java.util.Properties | `<props>` |
 
 
 
@@ -538,7 +538,6 @@ HashMap<Integer, String> hashMap = new HashMap<Integer, String>();
 
 - **어노테이션은 XML설정 부담을 줄여줌**
 - 스프링 설정 파일의 루트 엘리먼트인 beans에 Context관련 <u>네임스페이스</u>와 <u>스키마 문서</u> 위치 등록
-- - 
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -557,7 +556,7 @@ HashMap<Integer, String> hashMap = new HashMap<Integer, String>();
 
 ## @Component
 
-- 사용할 객체들을 스프링 설정 파일의  <bean>에 등록하지 않으려면 `<context:component-scan/>`엘리먼트 정의 필요
+- 사용할 객체들을 스프링 설정 파일의  `<bean>`에 등록하지 않으려면 `<context:component-scan/>`엘리먼트 정의 필요
 
   - `<context:component-scan base-package="polymorphism"></context:component-scan>`
 
@@ -639,7 +638,7 @@ public class LgTV implements TV {
 
 ## @Resource
 
-> **<u>객체의 이름 이용</u>**하여 의존성 주입 처리
+> **객체의 이름 이용**하여 의존성 주입 처리
 
 > `@Autowired` + `@Qualifier("특정객체명")` = `@Resource(name="특정객체명")`
 
@@ -666,7 +665,7 @@ public class LgTV implements TV {
 
 
 
-- cf) @Autowired : **<u>변수의 타입을 기준</u>**으로 객체 검색하여 의존성 주입 처리
+- cf) @Autowired : **변수의 타입을 기준**으로 객체 검색하여 의존성 주입 처리
 - @Inject도 @Resource와 같은 기능
 
 
@@ -686,11 +685,11 @@ public class LgTV implements TV {
 
 # 추가 어노테이션
 
-| 어노테이션  |      위치      |                      의미                      |
-| :---------: | :------------: | :--------------------------------------------: |
-|  @Service   | XXXServiceImpl |  <u>비즈니스 로직</u> 처리하는 Service클래스   |
-| @Repository |     XXXDAO     |       <u>DB연동</u>을 처리하는 DAO클래스       |
-| @Controller | XXXController  | 사용자 <u>요청을 제어</u>하는 Controller클래스 |
+| 어노테이션  |      위치      |                    의미                     |
+| :---------: | :------------: | :-----------------------------------------: |
+|  @Service   | XXXServiceImpl |  **비즈니스 로직** 처리하는 Service클래스   |
+| @Repository |     XXXDAO     |       DB**연동을** 처리하는 DAO클래스       |
+| @Controller | XXXController  | 사용자 **요청을 제어**하는 Controller클래스 |
 
 
 
