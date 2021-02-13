@@ -1029,3 +1029,10 @@ public class BoardDAO extends JdbcDaoSupport {
 
 
 
+# CLASS07 트랜잭션 처리
+
+- 선언적 트랜잭션 : 트랜잭션 처리를 컨테이너가 자동으로 처리하도록 설정
+  - XML기반의 AOP설정만 사용 가능
+  - 어노테이션 사용X
+  - `<aop:advisor>`엘리먼트만 사용 가능
+
