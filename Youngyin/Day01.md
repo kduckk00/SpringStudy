@@ -1,3 +1,57 @@
+# class 01 스프링 프레임워크 시작하기
+## 1.1 개발 환경 구축
+1. JDK 설치
+2. 이클립스 설치
+3. 톰캣 서버 설치 및 이클립스 연동
+4. H2 데이터 베이스 구축
+```
+CREATE TABLE USERS(
+    ID VARCHAR2 (8) PRIMARY KEY,
+    PASSWORD VARCHAR2 (8) ,
+    NAME VARCHAR2 (20),
+    ROLE VARCHAR2 (5)
+);
+
+INSERT INTO USERS VALUES('TEST', 'TEST123', '관리자', 'Admin');
+INSERT INTO USERS VALUES('user1', 'user123', '홍길동', 'User');
+
+CREATE TABLE BOARD(
+    SEQ NUMBER(5) PRIMARY KEY,
+    TITLE VARCHAR2 (200) ,
+    WRITER VARCHAR2 (20),
+    CONTENT VARCHAR2 (2000) ,
+    REGDATE DATE DEFAULT SYSDATE,
+    CNT NUMBER(5) DEFAULT 0
+);
+
+INSERT INTO BOARD(SEQ ,TITLE ,WRITER ,CONTENT)  VALUES(1, '가입인사', '관리자', '잘 부탁드립니다...');
+```
+```
+SELECT * FROM USERS ;
+```
+|ID|PASSWORD|NAME|ROLE|
+| ----- | ----- | ----- | ----- |
+|TEST|TEST123|관리자|Admin|
+|user1|user123|홍길동|User|
+
+```
+SELECT * FROM BOARD ;
+```
+|SEQ|TITLE|WRITER|CONTENT|REGDATE|CNT|
+| ----- | ----- | ----- | ----- | ----- | ----- |
+|1|가입인사|관리자|잘 부탁드립니다...|2021-02-09|0|
+
+5. STS(spring tool suite) 플러그인 설치
+* STS는 이클립스(eclipse)에 스프링프레임워크 관련된 패키지가 포함된 프로그램으로 이클립스 마켓에 Spring관련 플러그인을 설치해서 사용할 수 있다.
+* Spring에는 두가지 환경이 있다.
+  + Spring Legacy Project
+  + Spring Boot
+* STS 4는 레거시 프로젝트를 지원하지 않으므로 STS 3 플러그인을 이클립스 마켓플레이스에서 설치해야 한다.
+
+## 1.2 실습 프로젝트 생성
+1. 프로젝트 생성
+2. 프로젝트 설정 변경
+
 # class 02 프레임 개요
 ## 2.1 프레임 워크의 개념
 ### 2.1.1 프레임워크의 등장 배경
@@ -36,7 +90,7 @@
 * 스프링은 여러개의 모듈로 구성되어 있으며 각 모듈은 여러개의 JAR파일로 구성되어 있다. JAR파일만 있으면 개발과 실행이 모두 가능하므로 애플리캐이션의 배포가 빠르고 쉽다.
 * 스프링 프레임워크 단순하고 가벼운 POJO 형태의 객체를 관리하기 때문에 기존의 EJB 객체를 관리하는 것보다 훨씬 가볍고 빠르다.
 
-#### **제어와 역량**
+#### **제어의 역행(IoC)**
 IoC가 적용되면 객체 생성을 자바 코드로 직접 처리하는 것이 아니라 컨테이너가 대신 처리한다. 또한 객체와 객체 사이의 의존관계 역시 컨테이너가 처리한다.
 
 #### **관점 지향 프로그래밍(AOP)**
@@ -62,8 +116,8 @@ IoC가 적용되면 객체 생성을 자바 코드로 직접 처리하는 것이
 스프링에서는 BeanFactory와 이를 상속한 ApplicationContext 두 가지 유형의 컨테이너를 제공한다.
 |BeanFactory|ApplicationContext|
 | ----- | ----- |
-|스프링 설정 파일에 등록된 <bean>객체를 생성하고 관리|스프링 설정 파일에 등록된 <bean>객체를 생성하고 관리, 트랜잭션 관리, 메서지 기반의 다국어 처리 등|
-|클라이언트의 요청에 의해서만 <bean>객체가 생성되는 지연로딩|컨테이너가 구동될 때 <bean>객체를 생성하는 즉시로딩|
+|스프링 설정 파일에 등록된 \<bean>객체를 생성하고 관리|스프링 설정 파일에 등록된 \<bean>객체를 생성하고 관리, 트랜잭션 관리, 메서지 기반의 다국어 처리 등|
+|클라이언트의 요청에 의해서만 \<bean>객체가 생성되는 지연로딩|컨테이너가 구동될 때 \<bean>객체를 생성하는 즉시로딩|
 
 대부분의 스프링 프로젝트는 ApplicationContext를 이용하며 GenericXmlApplicationContext와 XmlWebApplicationContext 두 클래스가 가장 많이 이용된다.
 |구현 클래스|기능|
@@ -71,20 +125,102 @@ IoC가 적용되면 객체 생성을 자바 코드로 직접 처리하는 것이
 |GenericXmlApplicationContext|파일 시스템이나 클래스 경로에 있는 XML 설정 파일을 로딩하여 구동하는 컨테이너이다.|
 |XmlWebApplicationContext|웹 기반의 스프링 애플리케이션을 개발할 때 사용하는 컨테이너이다.|
 
+### 스프링 컨테이너 구동 테스트
+
+* src/main/resources/applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+
+	<bean id = "tv" class = "polymorphism.SamsungTV"></bean>
+	
+</beans>
+```
+
+* src/main/java/polymorphism/TVUser.java
+
+```java
+package polymorphism;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class TVUser {
+	public static  void main(String[] args) {
+		// 1. Spring 컨테이너를 구동한다.
+		AbstractApplicationContext factory = new GenericXmlApplicationContext("applicationContext.xml");
+		
+		// 2. Spring 컨테이너로부터 필요한 객체를 요청한다. Look Up
+		TV tv = (TV)factory.getBean("tv");
+		tv.powerOn();
+		tv.volumeUp();
+		tv.volumeDown();
+		tv.powerOff();
+		
+		// 3. Spring 컨테이너를 종료한다.
+		factory.close();
+	}
+}
+```
+
+* src/main/java/polymorphism/SamsungTV.java
+
+```java
+package polymorphism;
+
+public class SamsungTV implements TV{
+	public SamsungTV() {
+		System.out.println("===> SamsungTV 객체 생성");
+	}
+	
+	public void powerOn() {
+		System.out.println("SamsungTV--전원을 켠다.");
+	}
+	
+	public void powerOff() {
+		System.out.println("SamsungTV--전원을 끈다.");
+	}
+
+	public void volumeUp() {
+		System.out.println("SamsungTV--소리를 올린다.");
+	}
+
+	public void volumeDown() {
+		System.out.println("SamsungTV--전원를 내린다.");
+	}
+}
+```
+
+* 스프링 컨테이너 동작순서
+
+  1. TVUser 클라이언트가 스프링 설정파일을 로딩하여 컨테이너 구동
+
+  2. 스프링 설정 파일에 \<bean> 등록된 SamsungTV 객체 생성
+  3. getBean() 메소드로 이름이 'tv'인 객체를 요청(Lookup)
+  4. SamsungTV 객체 반환
+
+* 실행결과
+
+![53page_실행결과](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\53page_실행결과.PNG)
+
 ## 3.2 스프링 XML 설정
-### 3.2.1 <beans> 루트 엘리먼트
-* 스프링 컨테이너는 <bean>저장소에 해당하는 XML 설정 파일을 참조하여 <bean>의 생명 주기를 관리하고 여러가지 서비스를 제공한다.
-* 스프링 설정 파일 이름은 무엇을 사용하든 상관없지만 <beans>를 루트 엘리먼트로 사용해야 한다. 그리고 <beans> 앨리먼트 시작 태그에 네임 스페이스를 비롯한 XML 스키마 관련 정보가 설정된다.
 
-### 3.2.2 <import> 엘리먼트
-설정을 효율적으로 관리하기 위하여 기능별 여러 XML파일로 나누어 설정하는 것이 더 효율적인데, 이렇게 분리하여 작성한 설정파일을 하나로 통합할 때 <import> 엘리먼트를 사용한다.
+### 3.2.1 \<beans> 루트 엘리먼트
+* 스프링 컨테이너는 \<bean>저장소에 해당하는 XML 설정 파일을 참조하여 \<bean>의 생명 주기를 관리하고 여러가지 서비스를 제공한다.
+* 스프링 설정 파일 이름은 무엇을 사용하든 상관없지만 \<beans>를 루트 엘리먼트로 사용해야 한다. 그리고 \<beans> 앨리먼트 시작 태그에 네임 스페이스를 비롯한 XML 스키마 관련 정보가 설정된다.
 
-### 3.2.3 <bean> 엘리먼트
-* 스프링 설정 파일에 클래스를 등록하려면 <bean>엘리먼트를 사용한다. 이때 id와 class 속성을 사용하는데, id속성은 생략 할 수 있지만 class속성은 필수이다. class속성에 클래스를 등록할 떄는 정확한 패키지 경로와 이름을 지정해야 한다.
+### 3.2.2 \<import> 엘리먼트
+설정을 효율적으로 관리하기 위하여 기능별 여러 XML파일로 나누어 설정하는 것이 더 효율적인데, 이렇게 분리하여 작성한 설정파일을 하나로 통합할 때 \<import> 엘리먼트를 사용한다.
+
+### 3.2.3 \<bean> 엘리먼트
+* 스프링 설정 파일에 클래스를 등록하려면 \<bean>엘리먼트를 사용한다. 이때 id와 class 속성을 사용하는데, id속성은 생략 할 수 있지만 class속성은 필수이다. class속성에 클래스를 등록할 떄는 정확한 패키지 경로와 이름을 지정해야 한다.
 * **id 속성**은 유일한 값을 가져야 하며 자바의 식별자 작성규칙을 따라야 한다. **name 속성**은 id와 다르게 자바 식별자 작성 규칙을 따르지 않는 문자열도 허용한다.(특수문자 사용 가능) 또한 name속성값 역시 전체 스프링 파일 내에서 유일해야 한다.
 
-### 3.2.4 <bean> 엘리먼트 속성
-```
+### 3.2.4 \<bean> 엘리먼트 속성
+```xml
 <bean
   id = "tv"
   class = "polymorphism.SamsungTV"
@@ -94,17 +230,56 @@ IoC가 적용되면 객체 생성을 자바 코드로 직접 처리하는 것이
   scope = "singleton"/>
 ```
 #### **init-method 속성**
+
 객체를 생성할 때 멤버변수를 초기화하는 메소드를 지정한다.
+
+![init-method](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\init-method.PNG)
+
 #### **destory-method 속성**
 스프링 컨테이너가 객체를 삭제하기 전에 호출할 임의의 메소드를 지정할 수 있다.
+
+![destroy-method](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\destroy-method.PNG)
+
 #### **lazy-method 속성**
-시스템의 부담을 줄이기 위해 컨테이너가 구동되는 시점이 아닌 해당<bean>이 사용되는 시점에 객체를 생성하도록 지정할 수 있다.
+시스템의 부담을 줄이기 위해 컨테이너가 구동되는 시점이 아닌 해당\<bean>이 사용되는 시점에 객체를 생성하도록 지정할 수 있다.
 #### **scope 속성**
+
+```java
+package polymorphism;
+
+import org.springframework.context.support.AbstractApplicationContext;
+import org.springframework.context.support.GenericXmlApplicationContext;
+
+public class TVUser {
+	public static  void main(String[] args) {
+		// 1. Spring 컨테이너를 구동한다.
+		AbstractApplicationContext factory = new GenericXmlApplicationContext("applicationContext.xml");
+        
+		// 2. Spring 컨테이너로부터 필요한 객체를 요청한다. Look Up
+		TV tv1 = (TV)factory.getBean("tv");
+		TV tv2 = (TV)factory.getBean("tv");
+		TV tv3 = (TV)factory.getBean("tv");
+		
+		// 3. Spring 컨테이너를 종료한다.
+		factory.close();
+	}
+}
+```
+
 * 하나의 객체만 생성하여 유지하기 위해서는 객체를 생성하고 주소를 복사하여 재사용하여야 한다.
 * scope의 속성값은 기본이 싱글톤이다. 이는 해당 bean이 스프링 컨테이너에 의해 단 하나만 생성되어 운용되도록 한다.
-* <bean>의 scope 속성을 "prototype"으로 지정할 수 있는데, 이렇게 지정하면 스프링 컨테이너는 해당 bean이 요청될 떄마다 매번 새로운 객체를 생성하여 반환한다.
+
+![scope(1)](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\scope(1).PNG)
+
+* \<bean>의 scope 속성을 "prototype"으로 지정할 수 있는데, 이렇게 지정하면 스프링 컨테이너는 해당 bean이 요청될 때마다 매번 새로운 객체를 생성하여 반환한다.
+
+![scope(2)](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\scope(2).PNG)
+
 ---
+
+
 # class 04 의존성 주입
+
 ## 4.1 의존성 관리
 * 객체의 생성과 의존관계를 컨테이너가 자동으로 관리한다는 것이 스프링 스프링은 IoC(제어의 역행)의 핵심 원리이다.
 * 스프링은 IoC(제어의 역행)을 Dependency Lookup과 Dependency Injection의 두 가지 형태로 지원한다.
@@ -119,21 +294,74 @@ IoC가 적용되면 객체 생성을 자바 코드로 직접 처리하는 것이
 
 ## 4.2 생성자 인젝션 이용하기
 * 스프링 인젝션을 이용하면 생성자의 매개변수로 의존관계에 있 객체의 주소 정보를 전달할 수 있다.
-* 생성자 Injection을 위해서는 <bean>등록 설정에서 시작 태그와 종료 태그 사이에 <Constructor-arg> 엘리먼트를 추가하면 된다. 그리고 생성자 인자로 전달할 객체의 아이디를 <Constructor-arg> 엘리먼트에 ref 속성으로 참조한다.
+* 생성자 Injection을 위해서는 \<bean>등록 설정에서 시작 태그와 종료 태그 사이에 \<Constructor-arg> 엘리먼트를 추가하면 된다. 그리고 생성자 인자로 전달할 객체의 아이디를 \<Constructor-arg> 엘리먼트에 ref 속성으로 참조한다.
 
 ### 4.2.1 다중 변수 매핑
-* 생성자 인젝션에서 초기화해야 할 멤버 변수가 여러 개이면 여러 값을 한번에 전달해야 한다. 그리고 스프링 설정 파일에 <Constructor-arg> 엘리먼트를 매개변수의 개수만큼 추가해야 한다.
-* 인자로 전달될 데이터가 <bean>으로 등록돤 다른 객체일 때는 ref 속성을 이용하여 해당 객체의 아이디나 이름을 참조하지만, 고정된 문자열이나 정수 같은 기본형 데이터 일 때는 value속성을 사용한다.
+* 생성자 인젝션에서 초기화해야 할 멤버 변수가 여러 개이면 여러 값을 한번에 전달해야 한다. 그리고 스프링 설정 파일에 \<Constructor-arg> 엘리먼트를 매개변수의 개수만큼 추가해야 한다.
+* 인자로 전달될 데이터가 \<bean>으로 등록돤 다른 객체일 때는 ref 속성을 이용하여 해당 객체의 아이디나 이름을 참조하지만, 고정된 문자열이나 정수 같은 기본형 데이터 일 때는 value속성을 사용한다.
 * 생성자가 여러 개 오버로딩 되어 있다면 어떤 생성자를 호출해야 하는지 분명하지 않을 수 있다. 이를 위해 index 속성을 지원하며 어떤 값이 몇번째 매개변수로 매핑되는지 지정할 수 있다.
-```
-<bean id = "tv" class = "polymorphism.SamsungTV">
-  <constructor-arg index = "0" ref="sony"></constructor-arg>
-  <constructor-arg index = "1" value=2700000></constructor-arg>
-</bean>
+* src/main/java/polymorphism/SamsungTV.java
+```java
+package polymorphism;
+
+public class SamsungTV implements TV{
+	private SonySpeaker speaker;
+	private int price;
+	
+	public SamsungTV() {
+		System.out.println("===> SamsungTV 객체 생성");
+	}
+	
+	public SamsungTV(SonySpeaker speaker) {
+		System.out.println("===> SamsungTV(2) 객체 생성");
+		this.speaker = speaker;
+	}
+	
+	public SamsungTV(SonySpeaker speaker, int price) {
+		System.out.println("===> SamsungTV(3) 객체 생성");
+		this.speaker = speaker;
+		this.price = price;
+	}
+	
+	public void powerOn() {
+		System.out.println("SamsungTV--전원을 켠다.(가격 "+price+")");
+	}
+	
+	public void powerOff() {
+		System.out.println("SamsungTV--전원을 끈다.");
+	}
+
+	public void volumeUp() {
+		speaker.volumeUp();
+	}
+
+	public void volumeDown() {
+		speaker.volumeDown();
+	}
+}
 ```
 
-### 4.2.2 의존 관계 변경
+* src/main/resources/applicationContext.xml
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<bean id = "tv" class = "polymorphism.SamsungTV">
+		<constructor-arg ref="sony"></constructor-arg>
+		<constructor-arg value = "2700000"></constructor-arg>
+	</bean>
+	
+	<bean id = "sony" class = "polymorphism.SonySpeaker"></bean>
+</beans>
 ```
+
+![74page_실행결과](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\74page_실행결과.PNG)
+
+### 4.2.2 의존 관계 변경
+
+```xml
 <bean id = "tv" class = "polymorphism.SamsungTV">
   <constructor-arg index = "0" ref="sony"></constructor-arg>
   <constructor-arg index = "1" value=2700000></constructor-arg>
@@ -144,12 +372,14 @@ IoC가 적용되면 객체 생성을 자바 코드로 직접 처리하는 것이
 ```
 ref 속성의 객체아이디를 apple로 변경하면 자바 코드의 변경 없이도 SamsungTV가 사용하는 스피커를 변경할 수 있다.
 
+![74page_실행결과](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\74page_실행결과.PNG)
+
 ## 4.3 Setter 인젝션 이용하기
 ### 4.3.1 Setter 인젝션 기본
-Setter 메소드는 스프링 컨테이너가 자동으로 호출하며 호출하는 시점은 <bean>객체 생성 직후이다. 따라서 Setter 인젝션이 동작하려면 Setter 메소드 뿐아니라 기본 생성자도 반드시 필요하다.
+Setter 메소드는 스프링 컨테이너가 자동으로 호출하며 호출하는 시점은 \<bean>객체 생성 직후이다. 따라서 Setter 인젝션이 동작하려면 Setter 메소드 뿐아니라 기본 생성자도 반드시 필요하다.
 
-Setter 인젝션을 이용하려면 <property> 엘리먼트를 사용해야 하며 name속성값이 호출하고자 하는 메소드 이름이다.
-```
+Setter 인젝션을 이용하려면 \<property> 엘리먼트를 사용해야 하며 name속성값이 호출하고자 하는 메소드 이름이다.
+```xml
 <bean id = "tv" class = "polymorphism.SamsungTV">
   <property name="speaker" ref="sony"></property>
   <property name="price" value=2700000></property>
@@ -157,17 +387,18 @@ Setter 인젝션을 이용하려면 <property> 엘리먼트를 사용해야 하�
 ```
 
 ### 4.3.2 p 네임스페이스 이용하기
+
 p 네임 스페이스는 네임 스페이스에 대한 별도의 schema Location 이 없다.
 * p 네임 스페이스를 선언했으면 다음과 같이 참조형 변수에 참조할 객체를 할당할 수 있다.
-```
+```xml
 p:변수명-ref="참조할 객체의 이름이나 아이디"
 ```
-* 기본형이나 문자형 변수에 직접 값을 설정할 떄는 다음과 같이 사용한다.
-```
+* 기본형이나 문자형 변수에 직접 값을 설정할 때는 다음과 같이 사용한다.
+```xml
 p:변수명="설정할 값"
 ```
 * 예제
-```
+```xml
 <bean id = "tv" class = "polymorphism.SamsungTV"
   p:speaker-ref="sony"
   p:price="2700000"/>
@@ -177,10 +408,65 @@ p:변수명="설정할 값"
 ```
 
 ## 4.4 컬렉션 객체 설정
-* 배열이나 java.util.List 타입의 컬렉션 객체는 <list> 태그를 이용하여 설정한다.
-* 중복을 허용하지 않는 집합 객체를 사용할 떄는 java.util.Set이라는 컬렉션을 사용한다. 컬렉션 객체는 <set> 태그를 사용하여 설정할 수 있다.
-* 특정 key로 데이터를 등록하고 사용할 떄는 java.util.Map 컬렉션을 사용하며, <map> 태그를 사용하여 설정할 수 있다.
-* key=value 형태의 데이터를 등록하고 사용할 떄는 java.util.properties라는 컬렉션을 사용하며 <props> 엘리먼트를 사용하여 설정한다.
+
+* src/main/resources/applicationContext.xml
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
+	
+	<bean id="collectionBean"
+	class = "polymorphism.CollectionBean">
+	
+	<!-- list -->
+	<property name = "addressList">
+		<list>
+			<value>서울시 강남구 역삼동</value>
+			<value>서울시 성동구 행당동</value>
+		</list>
+	</property>
+	
+	<!-- set -->
+	<property name = "addressList2">
+		<set>
+			<value>서울시 강남구 역삼동</value>
+			<value>서울시 성동구 성수동</value>
+			<value>서울시 성동구 성수동</value>
+		</set>
+	</property>
+	
+	<!-- map -->
+	<property name = "addressList3">
+		<map>
+			<entry>
+				<key><value>고길동</value></key>
+				<value>서울시 강남구 역삼동</value>
+			</entry>
+			<entry>
+				<key><value>마이콜</value></key>
+				<value>서울시 강서구 화곡동</value>
+			</entry>
+		</map>
+	</property>
+	
+	<!-- properties -->
+	<property name = "addressList4">
+		<props>
+			<prop key = "고길동">서울시 강남구 역삼동</prop>
+			<prop key = "마이콜">서울시 강서구 화곡동</prop>
+		</props>
+	</property>
+	
+	</bean>
+</beans>
+```
+
+* 배열이나 java.util.List 타입의 컬렉션 객체는 \<list> 태그를 이용하여 설정한다.
+* 중복을 허용하지 않는 집합 객체를 사용할 떄는 java.util.Set이라는 컬렉션을 사용한다. 컬렉션 객체는 \<set> 태그를 사용하여 설정할 수 있다.
+* 특정 key로 데이터를 등록하고 사용할 떄는 java.util.Map 컬렉션을 사용하며, \<map> 태그를 사용하여 설정할 수 있다.
+* key=value 형태의 데이터를 등록하고 사용할 떄는 java.util.properties라는 컬렉션을 사용하며 \<props> 엘리먼트를 사용하여 설정한다.
 ---
 # class 05 어노테이션 기반 설정
 ## 5.1 어노테이션 설정 기초
@@ -229,3 +515,4 @@ public class LgTV implements TV {
 |@Controller|비즈니스 로직을 처리하는 Service 클래스|
 |@Service|데이터베이스 연동을 처리하는 DAO 클래스|
 |@Repository|사용자 요청을 제어하는 Controller 클래스|
+
