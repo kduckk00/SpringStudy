@@ -29,6 +29,7 @@
 
 - 두 관심을 분리하면 간결하고, 응집도 높은 코드 유지 가능
   -  BUT, 기존의 OOP언어에서는 공통코드를 완벽하게 독립시키기 어려움
+  -  하지만, 이걸 도와주는 것이 AOP
 
 
 
@@ -38,7 +39,8 @@
   - `pom.xml`파일 수정
 - 네임스페이스 추가 및 AOP설정
   - `applicationContext.xml`
-- AOP사용시, 핵심 관심 메소드와 횡단 관심 메소드 사이엣 소스상의 결합 발생X
+- **AOP사용시, 핵심 관심 메소드와 횡단 관심 메소드 사이엣 소스상의 결합 발생X**
+  - 클라이언트가 핵심관심인 비즈니스 메소드 호출할 때, 횡단 관심에 해당하는 메소드를 적절하게 실행해줌
 
 
 
@@ -49,31 +51,40 @@
 ### 조인포인트(Joinpoint)
 
 > = 포인트컷(Pointcut) 대상, 포인트컷(Pointcut) 후보
+>
+> - 조인포인트 중에서 포인트컷이 선택되기 때문
 
 > 클라이언트가 호출하는 모든 <u>**비즈니스 메소드 (= 핵심 관심 메소드)**</u>
 
-- BoardServiceImpl, UserServiceImpl과 같은 클래스의 모든 메소드 
+- BoardServiceImpl, UserServiceImpl과 같은 클래스의 메소드 
 
 
 
 ### 포인트컷(Pointcut)
 
-> **필터링된** 조인포인트
+> <u>**필터링된** 조인포인트</u>
 
 - ex) 트랜잭션을 처리하는 공통기능을 만들었다면 
 
   - 등록, 수정, 삭제 기능의 비즈니스 메소드엔 동작 / 검색 기능의 메소드엔 동작 필요X
 
-- 원하는 특정 메소드에서만 횡단 관심에 해당하는 공통 기능 수행위해 포인트컷 필요
+- **원하는 특정 메소드에서만 횡단 관심에 해당하는 공통 기능 수행위해 포인트컷 필요**
 
 - `<aop:pointcut>`엘리먼트 선언해 사용
 
+  - `*` : 리턴타입
+  - `com.springbook.biz.` : 패키지명
+  - `*Impl` : 클래스명
+- `get*(..)` : 메소드명 및 매개변수
+  - get으로 시작하는 메소드만 포인트컷으로 설정
+  
   ```xml
   <aop:pointcut id="getPointcut" expression="execution(* com.springbook.biz..*Impl.get*(..))"/>
   ```
-
+  
   - id속성 : 포인트컷을 식별할 유일한 문자열 선언
-  - expression속성에 따라 필터링 되는 메소드가 달라짐
+    - 이 id가 나중에 포인트컷 참조할 때, 사용
+  - **expression속성에 따라 필터링 되는 메소드가 달라짐**
 
 
 
@@ -82,10 +93,10 @@
 > **<u>횡단 관심에 해당</u>**하는 공통 기능의 코드 의미
 
 - 독립된 클래스의 메소드로 작성
-  - 언제 동작하리 스프링 설정파일 통해 지정 가능
+  - 언제 동작할지 스프링 설정파일 통해 지정 가능
 
 - ex) 트랜잭션 관리 기능의 어드바이스 메소드 존재
-  - 비즈니스 로직 수행 후, 트래낵션 커밋 / 롤백 처리
+  - 비즈니스 로직 수행 후, 트랜잭션 커밋 / 롤백 처리
   - 동작시점 : after(공통 로그의 위치 변화)
 
 ![image-20210205221420088](images/image-20210205221420088.png)
@@ -106,23 +117,23 @@
 
 ### 위빙(Weaving)
 
-> 포인트컷으로 지정한 핵심 관심 메소드가 호출될 때, 어드바이스에 해당하는 횡단 관심 메소드가 삽입되는 과정
+> 포인트컷으로 지정한 **핵심 관심 메소드가 호출될 때**, 어드바이스에 해당하는 **횡단 관심 메소드가 삽입되는 과정**
 
 - 비즈니스 메소드를 수정하지 않고도 횡단 관심에 해당하는 기능 추가, 변경 가능
 - 스프링에선 런타임 위빙 방식만 지원
 
 
 
-### 애스팩트(Aspect) / 어드바이저(Advisor)
+### 애스팩트(Aspect) ≒ 어드바이저(Advisor)
 
 > **<u>포인트컷(핵심 관심) + 어드바이스(횡단관심 : 공통 코드)</u>**
 
 > 어떤 포인트컷 메소드에 대해 어떤 어드바이스 메소드 실행할지 결정
 
-- AOP의 핵심
-
+- **AOP의 핵심**
+- 애스팩트의 설정에 따라 AOP 동작방식 결정
 - `<aop:aspect>`사용
-  - 단, 트랜잭션 설정시 `<aop:advisor>`사용
+  - 단, **트랜잭션 설정시 `<aop:advisor>`사용**
 
 
 
@@ -169,17 +180,17 @@
 -  `<aop:config>`,  `<aop:aspect>`의 자식 엘리먼트로 사용가능
   - 단,  `<aop:aspect>`가 부모 엘리먼트면 해당  `<aop:aspect>`에서만 사용 가능
 
-- id할당으로  `<aop:aspect>`서렁시 포인트 컷 참조하는 용도
+- id할당으로  `<aop:aspect>`설정시 포인트컷 참조하는 용도
 
 
 
 ### ★`<aop:aspect>`★
 
-> 핵심 관심에 해당하는 포인트컷 메소드와 횡단 관심에 해당하는 어드바이스 메소드 결합위해 사용
+> 핵심 관심에 해당하는 **포인트컷 메소드**와 횡단 관심에 해당하는 **어드바이스 메소드 결합**위해 사용
 
 - aspect설정 결과에 따라 위빙 결과 달라짐
 
-- 어드바이스 id, 메소드명 알아야 사용 가능
+- **어드바이스 id, 메소드명 알아야 사용 가능**
 
 
 
@@ -190,6 +201,7 @@
 >`<aop:aspect>`와 같은 기능
 
 - `<aop:aspect>`를 사용하지 못할 때 사용
+  - 주로, 트랜잭션 기능 처리위해 사용
 
 
 
@@ -312,11 +324,11 @@
 
 ## Around 어드바이스
 
-- 하나의 어드바이스가 비즈니스 메소드 실행 전, 후에 모두 동작하여 로직 처리
+- 하나의 어드바이스가 **비즈니스 메소드 실행 전, 후에 모두 동작**하여 로직 처리
 - 클라이언트의 메소드 호출 가로챔
   - 비즈니스 메소드 실행 전, 호출
     - ProceedingJoinPoint 객체를 매개변수로 받아야 가능
-    - ProceedingJoinPoint 객체의 proceed() 메소드 통해 비즈니스 메소드 호출 가능
+    - ProceedingJoinPoint 객체의 <u>proceed() 메소드 통해 비즈니스 메소드 호출 가능</u>
   - 비즈니스 메소드 실행 후, 호출
 
 ```java
@@ -339,14 +351,15 @@ public class AroundAdvice {
 
 
 
-- 나머지 어드바이스에서는 JoinPoint 사용해야 하고, <u>Aroud어드바이스만 ProceedingJoinPoint를 매개변수로 사용</u>해야 함
+- 나머지 어드바이스에서는 JoinPoint 사용해야 하고, <u>**Aroud어드바이스만 ProceedingJoinPoint를 매개변수로 사용**</u>해야 함
   - `proceed()`메소드가 필요하기 때문
 
 
 
 # CLASS04 JoinPoint와 바인드 변수
 
-- 횡단 관심에 해당하는 어드바이스 메소드를 구현하려면 클라이언트가 호출한 비즈니스 메소드의 정보가 필요
+- 횡단 관심에 해당하는 <u>어드바이스 메소드를 정확하게 구현</u>하려면 클라이언트가 호출한 <u>비즈니스 메소드의 정보가 필요</u>
+  - 스프링은 다양한 정보들을 이용할 수 있도록 JoinPoint인터페이스 제공
 
 
 
@@ -355,25 +368,27 @@ public class AroundAdvice {
 |          메소드          |                             설명                             |
 | :----------------------: | :----------------------------------------------------------: |
 | Signature getSignature() | 클라이언트가 호출한 메소드의 시그니처(**리턴타입, 이름, 매개변수) 정보가 저장**된 **Signature객체 리턴** |
-|    Object getTarget()    | 클라이언트가 호출한 비즈니스 메소드를 포함하는 **비즈니스 객체 리턴** |
-|    Object[] getArfs()    | 클라이언트가 메소드를 호출할 때 **넘겨준 인자 목록을 Object 배열로 리턴** |
+|    Object getTarget()    | 클라이언트가 호출한 <u>비즈니스 메소드를 포함</u>하는 **비즈니스 <u>객체</u> 리턴** |
+|    Object[] getArgs()    | 클라이언트가 메소드를 호출할 때 **넘겨준 인자 목록을 Object <u>배열</u>로 리턴** |
 
 
 
 ### Signature객체가 제공하는 메소드
 
+- getSignature()메소드가 리턴하는 Signature객체
+
 |        메소드명        |                             설명                             |
 | :--------------------: | :----------------------------------------------------------: |
-|    String getName()    |             클라이언트가 호출한 메소드 이름 리턴             |
+|    String getName()    |           클라이언트가 호출한 **메소드 이름 리턴**           |
 | String toLongString()  | 클라이언트가 호출한 **메소드의 리턴 타입, 이름, 매개변수를 패키지 경로까지 포함하여 리턴** |
 | String toShortString() | 클라이언트가 호출한 메소드 **시그니처를 축약한 문자열로 리턴** |
 
-
-
-- JoinPoint 사용하려면 JoinPoint를 어드바이스 메소드 매개변수로 선언만 하면 된다.
-  - 클라이언트가 비즈니스 메소드를 호출할 때, 스프링 컨테이너가 JoinPoint객체 생성
-  - 메소드 호출과 관련된 모든 정보를 JoinPoint객체에 저장, 
-  - 어드바이스 메소드 호출할 때 , 인자로 넘겨줌
+- JoinPoint는 어드바이스의 종류에 다라 사용방법이 다름
+  - **JoinPoint 사용하려면 JoinPoint를 어드바이스 메소드 매개변수로 선언만 하면 된다.**
+    - 클라이언트가 비즈니스 메소드를 호출할 때, 스프링 컨테이너가 JoinPoint객체 생성
+    - **메소드 호출과 관련된 모든 정보를 JoinPoint객체에 저장,** 
+    - 어드바이스 메소드 호출할 때 , 인자로 넘겨줌
+  - Around어드바이스만 ProceedingJoinPoint 사용하고 나머지 어드바이스는 JoinPoint사용
 
 
 
@@ -401,13 +416,13 @@ public class BeforeAdvice {
 
 
 
-## After Returning 어드바이스
+## After Returning 어드바이스(+바인드변수)
 
 - 비즈니스 메소드가 수행되고 나서, 결과 데이터를 리턴할 때 동작하는 어드바이스
 
 - **바인드 변수** : 비즈니스 메소드가 리턴한 결괏값을 바인딩할 목적으로 사용
-  - 어떤 값이 리턴될지 모르기 떄문에 Object타입으로 선언
-  - 바인드 변수 추가했다면, 매핑 설정 파일에 추가 
+  - **어떤 값이 리턴될지 모르기 떄문에 Object타입으로 선언**
+  - **바인드 변수 추가했다면, 매핑 설정 파일에 추가** 
   - `<aop:after-returning>`엘리먼트의 returning속성 사용
     - 해당 엘리먼트에서만 retruning속성 사용가능
     - `returning="returnObj"` 속성 값으로 들어온 returnObj와 어드바이스 메소드 매개변수로 선언된 바인드 변수명과 동일해야 함
@@ -467,6 +482,7 @@ public class AfterReturningAdvice {
 
 - 예외 발생 시 동작하는 어드바이스
   - 어떤 메소드에서 예외가 발생했는지 알아야 함
+  - 그래야 정확한 예외처리를 구현할 수 있기 때문
 
 
 
@@ -509,10 +525,11 @@ public class AfterThrowingAdvice {
 ```
 
 - 비즈니스 메소드에서 발생한 예외객체를 exceptObj라는 바인드 변수를 통해 받음
-  - 바인드 변수는 모든 예외 객체를 바인드할 수 있도록 예외 클래스의 최상위 타입인 Exception으로 선언
+  - **바인드 변수는 모든 예외 객체를 바인드할 수 있도록 예외 클래스의 최상위 타입인 Exception으로 선언**
 - `<aop:after-throwing>`엘리먼트의 throwing속성 사용
   - 해당 엘리먼트에서만 throwing속성 사용가능
-  - `throwing="returnObj"` 속성 값으로 들어온 exceptObj와 어드바이스 메소드 매개변수로 선언된 바인드 변수명과 동일해야 함
+  - `throwing="exceptObj"` 속성 값으로 들어온 exceptObj와 어드바이스 메소드 매개변수로 선언된 바인드 변수명과 동일해야 함
+    - `public void exceptionLog(JoinPoint jp, Exception exceptObj)`
 
 ![image-20210206155250355](images/image-20210206155250355.png)
 
@@ -535,10 +552,11 @@ public class AfterThrowingAdvice {
 # CLASS05 어노테이션 기반 AOP
 
 - AOP를 어노테이션으로 설정하려면 `<aop:aspectj-autoproxy>`엘리먼트 설정 필요
-  - 스프링 컨테이너가 AOP관련 어노테이션들을 인식하고 용도에 맞게 처리
-- AOP관련 어노테이션들은 어드바이스 클래스에 설정
+  - 스프링 컨테이너가 AOP관련 어노테이션들을 인식하고 용도에 맞게 처리해줌
+- **AOP관련 어노테이션들은 어드바이스 클래스에 설정**
   - 반드시 어드바이스 객체 생성되어 있어야 처리 가능
-  - `<bean>`에 등록하거나 `@Service`에 등록해야 사용 가능
+  - **어드바이스 클래스**는 `<bean>`에 등록하거나 **`@Service`에 등록해야 사용 가능**
+    - 여기선 @Service 어노테이션 사용해 컴포넌트가 검색될 수 있도록 함
 
 
 
@@ -551,15 +569,17 @@ public class AfterThrowingAdvice {
 
   > 구현 로직이 없는 메소드
 
-  - 기능 처리가 목적이 아닌, 포인트컷 식별하는 이름으로만 사용
+  - 기능 처리가 목적이 아닌, **포인트컷 식별하는 이름으로만 사용**
 
 
 
 ## 어드바이스 설정
 
-- 어드바이스 메소드가 언제 동작할지 결정하여 관련된 메소드 위에 설정
+- 어드바이스 클래스에는 횡단 관심에 해당하는 어드바이스 메소드가 구현되어 있음
+  - 어드바이스 메소드가 언제 동작할지 결정하여 관련된 메소드 위에 설정
 - 어드바이스 메소드가 결합될 포인트컷 참조하기
-  - `@Before("allPointcut()")`
+  - ex) `@Before("allPointcut()")`
+  - allPointcut() 참조 메소드로 지정한 비즈니스 메소드가 호출될 때, 어드바이스 메소드인 printLog()메소드가 Before형태로 동작
 
 
 
@@ -631,7 +651,10 @@ public class LogAdvice { // @Aspect 설정으로 LogAdvice객체를 애스팩트
 
 -  `returning` / `throwing` 속성 필요
   - 바인드 변수를 명확하게 지정하기 위함
-
+  - **바인드 변수** : 비즈니스 메소드가 리턴한 결괏값을 바인딩할 목적으로 사용
+      - **어떤 값이 리턴될지 모르기 떄문에 Object타입으로 선언**
+      - **바인드 변수 추가했다면, 매핑 설정 파일에 추가** 
+  
 - `AfterReturningAdvice.java`
 
 ```java
@@ -681,7 +704,7 @@ public class AfterReturningAdvice {
   - 이런 문제를 해결하기 위해 포인트컷을 외부에 독립된 클래스에 따로 설정하도록 함
 
 - `PointcutCommon.java`
-  - 시스템에서 사용할 모든 포인트컷을 PointcutCommon클래스에 등록
+  - **시스템에서 사용할 모든 포인트컷을 PointcutCommon클래스에 등록**
 
 ```java
 package com.springbook.biz.common;
@@ -703,8 +726,8 @@ public class PointcutCommon {
 
 
 
-- 정의된 포인트컷을 사용하려면 클래스 이름과 참조 메소드 이름을 조합하여 지정해야 함
-- 변경된 `BeforeAdvice.java`
+- **정의된 포인트컷을 사용하려면 클래스 이름과 참조 메소드 이름을 조합하여 지정해야 함**
+  - 변경된 `BeforeAdvice.java`
 
 ```java
 package com.springbook.biz.common;
@@ -722,7 +745,8 @@ public class BeforeAdvice {
 //	public void allPointcut() {}
 //	
 //	@Before("allPointcut()")
-	// 위의 주석처리 된 코드 3줄이 아래 코드 한줄과 같은 역할, 단, 미리 Pointcut에 등록해야 함
+    
+	// 위의 주석처리 된 코드 3줄이 아래 코드 한줄과 같은 역할, 단, 미리 Pointcut에 등록해야 함(PointcutCommon클래스)
 	@Before("PointcutCommon.allPointcut()")
 	public void beforeLog(JoinPoint jp) {
 		String method = jp.getSignature().getName(); // 시그니처 정보가 저장된 Signature객체 리턴/ 클라이언트가 호출한 메소드 이름 리턴
@@ -737,6 +761,7 @@ public class BeforeAdvice {
 
 
 - `AfterReturningAdvice.java`
+  - 바인드변수 있을 때도 같음
 
 ```java
 package com.springbook.biz.common;
@@ -781,7 +806,7 @@ public class AfterReturningAdvice {
 
 - JDBC : DB연동 기술
   - 이용하려면 개발자가 작성해야 할 코드가 너무 많음
-  - 스프링은 JDBC 기반의 DB 연동 프로그램을 쉽게 개발할 수 있도록 JdbcTemplate 클래스 지원
+  - 스프링은 **JDBC 기반의 DB 연동 프로그램을 쉽게 개발할 수 있도록 JdbcTemplate 클래스 지원**
 
 
 
@@ -793,13 +818,13 @@ public class AfterReturningAdvice {
 
   > 복잡하고 반복되는 알고리즘을 캡슐화해서 재사용하는 패턴
 
-  - JDBC처럼 코딩 순서가 정형화된 기술에서 유용하게 사용가능
+  - JDBC처럼 **코딩 순서가 정형화된 기술에서 유용하게 사용가능**
 
 
 
 - JdbcTemplate클래스를 통해 반복되는 DB연동 로직 처리
   - **JDBC의 반복적인 코드 제거**
-- 개발자는 달라지는 SQL구문과 설정값만 처리
+- 개발자는 달라지는 **SQL구문과 설정값만 처리**
 
 
 
@@ -822,14 +847,15 @@ public class AfterReturningAdvice {
 
 ### 2. DataSource 설정
 
-- JdbcTemplate클래스가 JDBC API를 이용해 DB연동을 처리케 하려면 반드시 DB로부터 커넥션 얻어야 함
-  - JdbcTemplate객체가 사용할 DataSource를 `<bean>` 등록
+- JdbcTemplate클래스가 JDBC API를 이용해 DB연동을 처리케 하려면 **반드시 DB로부터 커넥션 얻어야 함**
+  - **JdbcTemplate객체가 사용할 DataSource를 `<bean>` 등록**
 - <u>DataSource설정은 트랜잭션 처리, Mybatis연동, JPA연동에서도 사용</u>
 
 - `applicationContext.xml`
   - appache의 BasicDataSource등록
-  - BigDataSource객체는 연결에 필요한 프로퍼티들을 Setter인젝션으로 설정
-  - BigDataSource객체 삭제되기 전, 연결 해제하고자 close()메소드를 destroy-method속성으로 지정
+    - 일반적으로 가장 많이 사용
+  - BigDataSource객체는 <u>연결에 필요한 프로퍼티들을 Setter인젝션으로 설정</u>
+  - BigDataSource객체 삭제되기 전, **연결 해제하고자 close()메소드를 destroy-method속성으로 지정**
 
 ```xml
 <!-- DataSource 설정 -->
@@ -846,7 +872,9 @@ public class AfterReturningAdvice {
 ### 3. 프로퍼티 파일을 활용한 DataSource 설정
 
 - PropertyPlaceholderConfigurer이용
-- `database.properties`
+  - 외부의 프로퍼티 파일 참조해 DataSource설정 가능
+  - `database.properties`
+    - 여기에 설정된 프로퍼티들 이용하여 DataSource를 설정하려면 `<context:property-placeholder>`엘리먼트 사용
 
 ```properties
 jdbc.driver=org.h2.Driver
@@ -858,6 +886,8 @@ jdbc.password=
 
 
 - `applicationContext.xml`
+  - `database.properties`에 설정된 프로퍼티 사용하기 위해 `<context:property-placeholder>`엘리먼트 추가
+  - 프로퍼티 파일의 위치 등록하기
 
 ```xml
 <!-- DataSource 설정 -->
@@ -878,7 +908,7 @@ jdbc.password=
 
 ### 1. update() 메소드
 
-- INSERT, UPDATEm DELETE구문 처리위해 사용
+- **INSERT, UPDATE, DELETE구문** 처리위해 사용
 - 이용방법
   1. SQL구문에 설정된 ?만큼 차례대로 나열
   2. Object배열 객체에 SQL구문에 설정된 ?수만큼의 값 세팅하여 두 번째 인자로 전달
@@ -887,7 +917,7 @@ jdbc.password=
 
 ### 2. queryForInt() 메소드
 
-- SELECT구문으로 검색된 정숫값 리턴받기 위해 사용
+- **SELECT구문**으로 검색된 **정숫값 리턴**받기 위해 사용
 
 
 
@@ -896,7 +926,7 @@ jdbc.password=
 - SELECT구문의 실행 결과를 **특정 자바 객체(Value Object)로 매핑**하여 리턴 받을 때 사용
   - **검색 결과를 자바객체로 매핑할 `RowMapper`객체 지정 필요**
     - RowMapper 인터페이스를 구현한 RowMapper 클래스 필요
-    - 즉, <u>RowMapper클래스는 테이블당 하나씩은 필요</u>
+    - 즉, <u>RowMapper클래스는 테이블당 하나씩은 필요하다는 말</u>
 - 검색 결과가 없거나 검색 결과가 2개 이상이면 예외 발생시킴
   - 즉, **검색 결과 1개일 때 사용**
 
@@ -905,6 +935,7 @@ jdbc.password=
 - RowMapper 인터페이스에는 mapRow()메소드 존재
   - 검색 결과로 얻어낸 Row정보를 어떤 VO에 어떻게 매핑할 것인지 구현
 - **RowMapper객체를 queryForObject()메소드의 매개변수로 넘겨주기**
+  - 스프링 컨테이너는 SQL구문을 수행 후, 자동으로 RowMapper객체의 mapRow()메소드 호출
 
 
 
@@ -912,14 +943,18 @@ jdbc.password=
 
 - **SELECT문의 실행 결과가 목록일 때, 사용**
   - CF) queryForObject()메소드는 SELECT문으로 객체 하나 검색 시, 사용
-  - 사용법은 같음
+  -  **queryForObject()메소드와 사용법은 같음**
 - 검색 결과를 VO객체에 매핑하려면 RowMapper객체 사용
 - query()메소드 실행시 , 여러 건의 ROW정보가 검색, 검색된 데이터 ROW수만큼 RowMapper객체의 mapRow()메소드 실행
   - <u>ROW정보가 매핑된 VO객체 여러 개가 List컬렉션에 저장되어 리턴</u>
 
 
 
-## DAO클래스 구현방법
+## DAO클래스 구현하는 2가지 방법
+
+- JdbcTemplate객체를 이용하여 DAO클래스 구현하기(2가지 방법)
+
+
 
 ### 1. JdbcDaoSupport 클래스 상속
 
@@ -994,20 +1029,22 @@ public class BoardDAO extends JdbcDaoSupport {
   - `getJdbcTemplate()`호출시, JdbcTemplate객체 리턴됨
   - 모든 메소드를 JdbcTemplate객체로 구현가능
   - BUT, DataSource객체 가지고 있어야 함
-
+  - DataSource객체를 가지기 위해 부모클래스인 JdbcTemplate 클래스의 setDataSource() 메소드 호출해 의존성 주입필요
+  
   ```java
   // DataSource객체를 가지기 위해 부모클래스인 JdbcTemplate 클래스의 setDataSource() 메소드 호출해 의존성 주입
   @Autowired 
   public void setSuperDataSource(DataSource dataSource) { 
   super.setDataSource(dataSource);
   }
-  ```
-
+```
+  
   
 
 ### 2. JdbcTemplate클래스 `<bean>`등록, 의존성 주입
 
 - JdbcTemplate클래스를 `<bean>`등록하고, 의존성 주입으로 처리
+  - 일반적으로 이 방법 사용
 - `applicationContext.xml`
 
 ```xml
@@ -1023,6 +1060,125 @@ public class BoardDAO extends JdbcDaoSupport {
 <bean id="jdbcTemplate" class="org.springframework.jdbc.core.JdbcTemplate">
 	<property name="dataSource" ref="dataSource" />
 </bean>
+```
+
+
+
+- `BoardDAOSpring.java`
+
+```java
+package com.springbook.biz.board.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Repository;
+
+import com.springbook.biz.board.BoardVO;
+
+@Repository
+public class BoardDAOSpring  {
+	// DataSource 설정 - JdbcTemplate클래스 <bean>등록, 의존성 주입
+//	@Autowired
+//	public void setSuperDataSource(DataSource dataSource) {
+//		super.setDataSource(dataSource);
+//	}
+	@Autowired
+	private JdbcTemplate jdbcTemplate;
+	
+	// SQL명령어들
+//	private final String BOARD_INSERT = "INSERT INTO BOARD(SEQ, TITLE, WRITER, CONTENT) VALUES(?, ?, ?, ?)";
+	private final String BOARD_INSERT = "INSERT INTO BOARD(SEQ, TITLE, WRITER, CONTENT) VALUES((SELECT NVL(MAX(SEQ), 0)+1 FROM BOARD), ?, ?, ?)";
+	private final String BOARD_UPDATE = "UPDATE BOARD SET TITLE=?, CONTENT=? WHERE SEQ=?";
+	private final String BOARD_DELETE = "DELETE BOARD WHERE SEQ=?";
+	private final String BOARD_GET = "SELECT * FROM BOARD WHERE SEQ=?";
+	private final String BOARD_LIST = "SELECT * FROM BOARD ORDER BY SEQ DESC"; // 최신 글부터 조회
+	
+	// CRUD 기능의 메소드 구현
+	// 글 등록
+	public void insertBoard(BoardVO vo) {
+		System.out.println("===> Spring JDBC로 insertBoard() 기능 처리");
+//		jdbcTemplate.update(BOARD_INSERT, vo.getSeq(), vo.getTitle(), vo.getWriter(), vo.getContent());
+		jdbcTemplate.update(BOARD_INSERT, vo.getTitle(), vo.getWriter(), vo.getContent());
+//		getJdbcTemplate().update(BOARD_INSERT, vo.getTitle(), vo.getWriter(), vo.getContent());
+	}
+	
+	// 글 수정
+	public void updateBoard(BoardVO vo) {
+		System.out.println("===> Spring JDBC로 updateBoard() 기능 처리");
+		jdbcTemplate.update(BOARD_UPDATE, vo.getTitle(), vo.getContent(), vo.getSeq());
+//		getJdbcTemplate().update(BOARD_UPDATE, vo.getTitle(), vo.getContent(), vo.getSeq());
+	}
+	
+	// 글 삭제
+	public void deleteBoard(BoardVO vo) {
+		System.out.println("===> Spring JDBC로 deleteBoard() 기능 처리");
+		jdbcTemplate.update(BOARD_DELETE, vo.getSeq());
+//		getJdbcTemplate().update(BOARD_DELETE, vo.getSeq());
+	}
+	
+	// 글 상세 조희
+	public BoardVO getBoard(BoardVO vo) {
+		System.out.println("===> Spring JDBC로 getBoard() 기능 처리");
+		Object[] args = {vo.getSeq()};
+		return jdbcTemplate.queryForObject(BOARD_GET, args, new BoardRowMapper());
+//		return getJdbcTemplate().queryForObject(BOARD_GET, args, new BoardRowMapper());
+	}
+	
+	// 글 목록 조회
+	public List<BoardVO> getBoardList(BoardVO vo) {
+		System.out.println("===> Spring DBC로 getBoardList() 기능 처리");
+		return jdbcTemplate.query(BOARD_LIST, new BoardRowMapper()); // 여러 결
+//		return getJdbcTemplate().query(BOARD_LIST, new BoardRowMapper()); // 여러 결과
+	}
+	
+	// DataSource 설정 - DAO클래스 구현방법 - JdbcDaoSupport 클래스 상속(extends JdbcDaoSupport)
+	// SQL명령어들
+//	private final String BOARD_INSERT = "INSERT INTO BOARD(SEQ, TITLE, WRITER, CONTENT) VALUES((SELECT NVL(MAX(SEQ), 0)+1 FROM BOARD), ?, ?, ?)";
+//	private final String BOARD_UPDATE = "UPDATE BOARD SET TITLE=?, CONTENT=? WHERE SEQ=?";
+//	private final String BOARD_DELETE = "DELETE BOARD WHERE SEQ=?";
+//	private final String BOARD_GET = "SELECT * FROM BOARD WHERE SEQ=?";
+//	private final String BOARD_LIST = "SELECT * FROM BOARD ORDER BY SEQ DESC"; // 최신 글부터 조회
+//	
+//	@Autowired
+//	public void setSuperDataSource(DataSource dataSource) {
+//		super.setDataSource(dataSource);
+//	}
+//	
+//	// CRUD 기능의 메소드 구현
+//	// 글 등록
+//	public void insertBoard(BoardVO vo) {
+//		System.out.println("===> Spring JDBC로 insertBoard() 기능 처리");
+//		getJdbcTemplate().update(BOARD_INSERT, vo.getTitle(), vo.getWriter(), vo.getContent());
+//	}
+//	
+//	// 글 수정
+//	public void updateBoard(BoardVO vo) {
+//		System.out.println("===> Spring JDBC로 updateBoard() 기능 처리");
+//		getJdbcTemplate().update(BOARD_UPDATE, vo.getTitle(), vo.getContent(), vo.getSeq());
+//	}
+//	
+//	// 글 삭제
+//	public void deleteBoard(BoardVO vo) {
+//		System.out.println("===> Spring JDBC로 deleteBoard() 기능 처리");
+//		getJdbcTemplate().update(BOARD_DELETE, vo.getSeq());
+//	}
+//	
+//	// 글 상세 조희
+//	public BoardVO getBoard(BoardVO vo) {
+//		System.out.println("===> Spring JDBC로 getBoard() 기능 처리");
+//		Object[] args = {vo.getSeq()};
+//		return getJdbcTemplate().queryForObject(BOARD_GET, args, new BoardRowMapper());
+//	}
+//	
+//	// 글 목록 조회
+//	public List<BoardVO> getBoardList(BoardVO vo) {
+//		System.out.println("===> Spring DBC로 getBoardList() 기능 처리");
+//		return getJdbcTemplate().query(BOARD_LIST, new BoardRowMapper()); // 여러 결
+//	}
+}
+
 ```
 
 
