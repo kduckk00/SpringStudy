@@ -202,9 +202,6 @@ public class SamsungTV implements TV{
   3. getBean() 메소드로 이름이 'tv'인 객체를 요청(Lookup)
   4. SamsungTV 객체 반환
 
-* 실행결과
-
-![53page_실행결과](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\53page_실행결과.PNG)
 
 ## 3.2 스프링 XML 설정
 
@@ -233,12 +230,8 @@ public class SamsungTV implements TV{
 
 객체를 생성할 때 멤버변수를 초기화하는 메소드를 지정한다.
 
-![init-method](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\init-method.PNG)
-
 #### **destory-method 속성**
 스프링 컨테이너가 객체를 삭제하기 전에 호출할 임의의 메소드를 지정할 수 있다.
-
-![destroy-method](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\destroy-method.PNG)
 
 #### **lazy-method 속성**
 시스템의 부담을 줄이기 위해 컨테이너가 구동되는 시점이 아닌 해당\<bean>이 사용되는 시점에 객체를 생성하도록 지정할 수 있다.
@@ -269,11 +262,9 @@ public class TVUser {
 * 하나의 객체만 생성하여 유지하기 위해서는 객체를 생성하고 주소를 복사하여 재사용하여야 한다.
 * scope의 속성값은 기본이 싱글톤이다. 이는 해당 bean이 스프링 컨테이너에 의해 단 하나만 생성되어 운용되도록 한다.
 
-![scope(1)](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\scope(1).PNG)
+![scope(1)]image\Day01\scope(1).PNG)
 
 * \<bean>의 scope 속성을 "prototype"으로 지정할 수 있는데, 이렇게 지정하면 스프링 컨테이너는 해당 bean이 요청될 때마다 매번 새로운 객체를 생성하여 반환한다.
-
-![scope(2)](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\scope(2).PNG)
 
 ---
 
@@ -357,8 +348,6 @@ public class SamsungTV implements TV{
 </beans>
 ```
 
-![74page_실행결과](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\74page_실행결과.PNG)
-
 ### 4.2.2 의존 관계 변경
 
 ```xml
@@ -371,8 +360,6 @@ public class SamsungTV implements TV{
 <bean id = "apple" class = "polymorphism.AppleSpeaker"></bean>
 ```
 ref 속성의 객체아이디를 apple로 변경하면 자바 코드의 변경 없이도 SamsungTV가 사용하는 스피커를 변경할 수 있다.
-
-![74page_실행결과](C:\Users\wjswj\git\SpringStudy\Youngyin\image\Day01\74page_실행결과.PNG)
 
 ## 4.3 Setter 인젝션 이용하기
 ### 4.3.1 Setter 인젝션 기본
@@ -476,12 +463,12 @@ p:변수명="설정할 값"
 클라이언트가 스프링 컨테이너가 생성한 객체를 요청하려면, 요청할 때 사용할 아이디나 이름이 반드시 설정되어 있어야 한다.
 
 **XML 설정**
-```
+```xml
 <bean id = "tv" class = "polymorphism.LgTV"/>
 ```
 
 **Annotation 설정**
-```
+```java
 @Component("tv")
 public class LgTV implements TV {
   public LgTV(){
