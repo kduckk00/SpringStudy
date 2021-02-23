@@ -805,4 +805,426 @@ public class BoardController { // 이 컨트롤러 하나로 나머지 컨트롤
 
 # CLASS03 프레젠테이션 레이어와 비즈니스 레이어 통합
 
-+
+## 기능 동작 순서
+
+- 브라우저에서 버튼, 하이퍼링크를 클릭하여 서버에 요청 전송시, 
+  - 모든 요청을 서블릿 컨테이너가 생성한 DIspatcherServlet이 받음
+  - DispatcherServlet은 스프링 컨테이너가 생성한 Controller에게 요청 전달
+  - Controller는 매개변수를 통해 전달된 DAO객체를 이용해 사용자가 요청한 로직 처리
+    - 하지만, Controller는 DO객체를 직접 이용해선 안됨
+    - 반드시 비즈니스 컴포넌트 이용해야 함
+
+
+
+## 비즈니스 컴포넌트 사용
+
+- Controller는 비즈니스 컴포넌트 이용해 사용자의 요청 처리해야 함
+  - 컴포넌트가 제공하는 Service인터페이스를 이용해야 함
+  - Controller가 직접 DAO객체의 메소드를 호출하도록 하면 안됨
+
+
+
+### Controller메소드에서 DAO의 메소드 호출하면 안되는 이유
+
+#### 1) DAO클래스 교체하기 - 유지 보수가 어렵다.
+
+- 현재, BoardController의 모든 메소드가 BoardDAO 객체를 매개변수로 받아 DB연동 처리
+  - DAO클래스를 변경하면 BoardController의 모든 메소드 수정해야 함
+  - 바람직하지 못함
+- 비즈니스 컴포넌트가 수정되더라도 이를 사용하는 Controller는 수정하지 않아도 되게끔 하려면
+  - **클라이언트가 인터페이스를 통해 비즈니스 컴포넌트를 이용하게끔 하기**
+  - **BoardController의 모든 메소드를 BoardService 컴포넌트의 인터페이스 이용**
+  - 다형성의 장점, 객체지향 언어의 중요 특징
+- `BoardController.java`
+  - boardService멤버 변수 선언, 
+  - 변수 위에 @Autowired설정했으므로 BoardService타입의 BoardServiceImpl객체가 의존성 주입됨
+  - BoardDAO매개변수 제거
+  - boardService변수 이용해 비즈니스 컴포넌트 사용케 함
+
+```java
+...
+
+
+@Controller
+@SessionAttributes("board")
+public class BoardController { // 이 컨트롤러 하나로 나머지 컨트롤러 대체가능, 나머지 삭제해도 무방
+	@Autowired
+	private BoardService boardService;
+	
+	...
+```
+
+
+
+- `BoardServiceImpl.java`
+  - @Service를 통해 boardService이용가능
+  - 이 클래스의 멤버변수로 선언된 BoardDAO를 다른 DAO클래스로 얼마든지 변경 가능
+
+```java
+package com.springbook.biz.board.impl;
+
+import java.util.List;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.springbook.biz.board.BoardService;
+import com.springbook.biz.board.BoardVO;
+
+@Service("boardService")
+public class BoardServiceImpl implements BoardService {
+	@Autowired
+	private BoardDAO boardDAO;
+	
+	...
+```
+
+
+
+#### 2) AOP설정 적용하기
+
+- 횡단 관심에 해당하는 어드바이스가 동작하려면 반드시 Service구현 클래스(BoardServiceImpl)의 비즈니스 메소드가 실행되어야 함
+- 포인트컷 설정시 Service구현 클래스의 메소드 설정
+  - 따라서, Controller가 매개변수로 DAO객체를 받아서 DAO 메소드를 직접 호출하는 현재상황에서는 AOP로 설정한 어떤 어드바이스도 동작할 수 없음
+- 대부분 비즈니스 컴포넌트는 인터페이스를 가지고 있으며, 이 인터페이스만 컴포넌트를 사용하는 클라이언트에 노출
+  - Controller클래스는 비즈니스 컴포넌트의 인터페이스 타입의 멤버변수를 가지고 있어야 함
+  - 이 변수에 비즈니스 객체를 의존성 주입해야 함
+- BoardController보다 의존성 주입될 BoardServiceImpl객체가 먼저 생성되어 있어야 함
+  - Controller보다 의존성 주입 대상이 되는 비즈니스 컴포넌트를 먼저 생성하려면 비즈니스 컴포넌트를 먼저 생성하는 또 다른 스프링 컨테이너가 필요함
+  - 이 컨테이너를 Controller를 메모리에 생성하는 컨테이너보다 먼저 구동하기
+
+
+
+## 비즈니스 컴포넌트 로딩
+
+### 2-Layered 아키텍처
+
+![image-20210223182221245](images/image-20210223182221245.png)
+
+- 일반적으로 프레임워크 기반의 웹 프로젝트 구조
+  - 두 개의 레이어로 나눠 시스템 개발
+- DistpatcherServlet이 생성되어 presentation-layer.xml 파일을 읽고 스프링 컨테이너를 구동하면 Controller객체들이 메모리에 생성
+  - 하지만, Controller생성 전, applicationContext.xml파일을 읽어 비즈니스 컴포넌트들을 메모리에 생성해야 함
+  - 이때 사용하는 클래스가 스프링에서 제공하는 ContextLoaderListener
+
+
+
+### ContextLoaderListener 등록
+
+- Listener는 web.xml파일에 등록
+- `<listener>`태그 하위
+  - `<listener-class>`태그 이용
+  - ContextLoaderListener클래스 등록
+- ContextLoaderListener클래스는 서블릿 컨테이너가 web.xml파일을 읽어서 구동될 떄, 자동으로 메모리에 생성
+  - **ContextLoaderListener는 클라이언트의 요청 없어도 컨테이너가 구동될 때, Pre-Loading되는 객체**
+
+- ContextLoaderListener는 기본적으로 `/WEB-INF/applicationContext.xml`파일을 읽어 스프링 컨테이너 구동
+- 유지보수 과정에서 비즈니스 컴포넌트를 수정하고 테스트를 진행하기 위해서라도 `src/main/resources`소스폴더에 XML파일 위치시키기
+  - 해당 위치에 스프링 설정파일 읽어들이기 위해서 web.xml파일에  `<context-param>`설정 추가하기
+- `web.xml`
+  - ContextLoaderListener객체는  `<context-param>`으로 등록된 contextConfigLocation파라미터 정보를 읽어 스프링 컨테이너 구동하도록 프로그램 되어 있음
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://java.sun.com/xml/ns/javaee" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd" version="2.5">
+	
+	<context-param>
+		<param-name>contextConfigLocation</param-name>
+		<param-value>classpath:applicationContext.xml</param-value>
+	</context-param>
+	
+	<listener>
+		<listener-class>
+			org.springframework.web.context.ContextLoaderListener
+		</listener-class>
+	</listener>
+	
+	...
+```
+
+
+
+## 스프링 컨테이너의 관계
+
+![image-20210223184941723](images/image-20210223184941723.png)
+
+- **톰캣 서버를 처음 구동하면 web.xml파일 로딩하여 서블릿 컨테이너 구동 ... ①**
+- **서블릿 컨테이너는 web.xml파일에 등록된 ContextLoaderListener 객체를 생성(Pre Loading) ... ②**
+  - **ContextLoaderListener객체는 `src/main/resources`폴더에 있는 applicationContext.xml파일 로딩 ... ③**
+  - **스프링 컨테이너 구동 ... ④**
+  - 이를 Root 컨테이너라고 함
+  - 이때, **Service 구현 클래스나 DAO객체들이 메모리에 생성 ... ④**
+- **사용자가 로그인 버튼 클릭해 `.do`요청 서버에 전달 ... ⑤**
+- **서블릿 컨테이너는 DispatcherServlet객체 생성 ... ⑥**
+  - **Distpatcher객체는 /WEB-INF/config폴더에 있는 presentation-layer.xml파일 로딩해 두 번쨰 스프링 컨테이너 구동 ... ⑦**
+    - **이 스프링 컨테이너가 Controller객체를 메모리에 생성 ... ⑧**
+
+---
+
+- 스프링 컨테이너는 2개 구동
+  - ContextLoaderListener, DispatcherServlet
+  - 각각 XmlWebApplicationContext생성
+    - ContextLoaderListener가 생성한 스프링 컨테이너 = Root 컨테이너 = 부모 컨테이너
+    - DispatcherServlet가 생성한 스프링 컨테이너 =  Root컨테이너 이용하는 자식 컨테이너
+  - 즉, 부모 컨테이너가 생성한 비즈니스 객체를 자식 컨테이너가 생성한 Controller에서 참조하여 사용
+
+
+
+# CLASS04 검색 기능 추가 구현
+
+## 검색 정보 추출
+
+### 검색 화면 구성
+
+- 검색 버튼을 클릭하면 검색 결과가 출력되는 형태
+- 검색화면에서 검색 조건과 검색 키워드에 해당하는 파라미터 이름
+  - searchCondition, searchKeyword
+  - searchCondition 파라미터 값은 사용자가 검색 조건을 제목으로 선택 - TITLE
+  - 검색 조건을 내용으로 선택 - CONTENT로 설정
+  - 검색 키워드는 텍스트 필드
+    - 사용자가 입력한 값이 직접 파라미터값으로 설정
+- 사용자가 이 searchCondition, searchKeyword 정보를 가지고 적절하게 설정하고 검색 버튼 클릭하면
+  - 사용자 입력값을 가지고 `/getBoardList.do`요청을 서버에 전달
+
+
+
+### command객체 수정
+
+- `getBoardList.do`경로 요청이 서버에 전달되면 스프링 컨테이너는 BoardController에 getBoardList()메소드 실행
+  - 이때, 사용자가 입력한 파라미터값들을 BoardVO라는 Command객체에 자동으로 채움
+  - **Command객체로 사용할 BoardVO클래스에 파라미터에 해당하는 멤버변수, Getter/Setter메소드 추가**
+
+
+
+### Controller 구현
+
+- Command객체로 사용할 BoardVO 클래스를 수정 후, 비즈니스 컴포넌트 호출하는 BoardController클래스 수정
+- 기본값을 적절하게 설정하여 비즈니스 컴포넌트에 전달해야 함
+  - null값에 대한 로직 추가
+
+
+
+### DAO클래스 수정
+
+- DB연동 처리를 담당하는 DAO클래스 수정
+
+#### 1) BoardDAO 클래스 수정
+
+- JDBC 기반으로 구현한 BoardDAO 클래스 수정
+
+- 기존의 글 목록을 조회하는 쿼리(BOARD_LIST)는 BOARD테이블의 모든 게시글을 조회하는 단일 쿼리
+- 검색조건(searchCondition) 파라미터 값이 TITLE이냐 CONTENT냐에 따라 다른 쿼리가 동작할 수 있도록 2개로 나누기
+- getBoardList() 메소드를 수정해 매개변수로 받은 BoardVO객체에 searchCondition변숫값이 TITLE, CONTENT에 따라 쿼리문 실행
+
+
+
+#### 2) BoardDAOSpring 클래스 수정
+
+- Spring JDBC를 이용해 DB연동 처리한 BoardDAOSpring 클래스 수정하기
+- BoardDAO클래스와 수정사항은 같음
+  - 다만, 검색 키워드를 설정하기 위해 Object배열 사용
+
+
+
+# CLASS05 파일 업로드
+
+## 파일 업로드 처리
+
+### 1) 파일 업로드 입력 화면
+
+- 글 등록 화면에서 파일을 업로드할 수 있게 만들기 위해 `<form>`태그에 enctype속성 추가
+  - 속성값을 멀티파트 형식인 `multipart/for-data`로 지정
+  - file타입의 input채그 추가
+
+
+
+### 2) Command 객체 수정
+
+- 업로드할 파일 정보가 추가되었으므로 Command객체로 사용하는 BoardVO에 파일 업로드 관련 변수 추가
+  - `org.springframwork.web.multipart.MultipartFile`타입의 uploadFile변수 추가
+  - Getter/Setter 메소드 적절한 위치에 생성
+
+
+
+### 3) FileUpload 라이브러리 추가
+
+- Apache에서 제공하는 Common FileUpload라이브러리 사용해 파일 업로드 처리
+  - FileUpload라이브러리를 내려받기 위한 `pom.xml`파일 수정
+  - `<dependency>`추가하기
+
+
+
+### 4) MultipartResolver 설정
+
+- 스프링 설정 파일에 CommonsMultiResolver를 `<bean>`등록
+- `presentation-layer.xml`
+
+```xml
+...
+
+	<!-- 파일 업로드 설정 -->
+	<bean id="multipartResolver" class="org.springframework.web.multipart.commons.CommonsMultipartResolver">
+		<property name="maxUploadSize" value="100000" />
+	</bean>
+	
+	...
+```
+
+
+
+- **CommonsMultipartResolver 클래스의 id, name이 매우 중요**
+  - 다른 bean등록과는 다르게, 이름이 정해져 있음
+  - DispatcherServlet이 특정 이름으로 등록된 CommonsMultipartResolver객체만 인식하도록 프로그램되어 있음
+  - 따라서, **CommonsMultipartResolver의 아이디 = `multipartResolver`**
+    - 참고) 클래스 중 `Resolver`로 끝나는 클래스들은 대부분 아이디가 정해져 있음
+- maxUploadSize에 대한 Setter인젝션은 업로드할 수 있는 파일의 크기 제한하기 위한 설정
+  - 지정하지 않으면 기본으로 -1설정
+    - 이는 파일 크기가 무제한이라는 것
+
+
+
+- setUploadFile()메소드가 호출되려면 MultipartFile타입의 객체가 먼저 생성되어야 함
+  - 스프링 컨테이너가 MultipartFile객체 생성, 할당
+- **CommonsMultipartResolver객체가 있어야 스프링 컨테이너는 MultipartFile객체 생성가능**
+  - CommonsMultipartResolver객체는 `multipartResolver`라는 이름으로 등록되어야 함
+
+
+
+#### MultipartFile객체란?
+
+> 클라이언ㅇ트가 업로드한 파일에 대한 모든 정보 저장되는 객체
+
+- 따라서, 이 MultipartFile객체만 가지고 있으면 원하는 위치에 해당 파일 업로드 가능
+
+
+
+##### MultipartFile 인터페이스가 제공하는 주요 메소드
+
+|             메소드             |                      설명                      |
+| :----------------------------: | :--------------------------------------------: |
+|  String getOriginalFilename()  |        업로드한 파일명을 문자열로 리턴         |
+| void transferTo(File destFile) |        업로드한 파일을 destFile에 저장         |
+|       boolean isEmpty()        | 업로드한 파일 존재 여부 리턴(없으면 true 리턴) |
+
+
+
+### 5) 파일 업로드 처리
+
+- `BoardController.java`
+
+```java
+...
+
+	// 글 등록
+	@RequestMapping("/insertBoard.do")
+//	public String insertBoard(BoardVO vo, BoardDAO boardDAO) {
+	public String insertBoard(BoardVO vo) throws IOException {
+		// 파일 업로드 처리
+		MultipartFile uploadFile = vo.getUploadFile();
+		if(!uploadFile.isEmpty()) {
+			String fileName = uploadFile.getOriginalFilename();
+			uploadFile.transferTo(new File("D:/" +fileName));
+		}
+		boardService.insertBoard(vo);
+//		boardDAO.insertBoard(vo);
+		return "getBoardList.do";
+	}
+	
+	...
+```
+
+
+
+## 예외처리
+
+- 예외발생시, 사용자에게 적절한 메시지가 담긴 화면 보여주기 위함
+- 예외를 처리하기 위해 XML설정과 어노테이션 설정 가능
+
+
+
+### 1) 어노테이션 기반의 예외처리
+
+- `@ControllerAdvice`, `@ExceptionHandler` 이용
+  - 컨트롤러의 메소드 수행 중 발생하는 예외 일괄 처리 가능
+  - `presentation-layer.xml`파일에 예외 처리 관련 어노테이션 사용 설정 추가
+  - mvc 네임스페이스 추가
+  - `<mvc:annotation-driven>`엘리먼트 설정
+- 예외의 종류에 따라 어노테이션 사용하기
+
+
+
+- `CommonExceptionHandler.java`
+  - 클래스 위에 선언된 `@ControllerAdvice("com.springbook.view")`
+    - CommonExceptionHandler객체 자동 생성
+    - `com.springbook.view`패키지로 시작하는 컨트롤러에서 예외발생하는 순간 `@ExceptionHandler`어노테이션으로 지정한 메소드 실행
+      - 어떤 예외가 발생했냐에 따라 다른 메소드 수행
+
+```java
+package com.springbook.view.common;
+
+import org.springframework.web.bind.annotation.ControllerAdvice;
+import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.servlet.ModelAndView;
+
+@ControllerAdvice("com.springbook.view")
+public class CommonExceptionHandler {
+	
+	@ExceptionHandler(ArithmeticException.class)
+	public ModelAndView handleArithmeticException(Exception e) {
+		ModelAndView mav = new ModelAndView();
+		mav.addObject("exception", e);
+		mav.setViewName("/common/arithmeticError.jsp");
+		return mav;
+	}
+	
+	@ExceptionHandler(NullPointerException.class)
+	public ModelAndView handleNullPointerException(Exception e) {
+		ModelAndView mav = new ModelAndView();
+		mav.addObject("exception", e);
+		mav.setViewName("/common/nullPointerError.jsp");
+		return mav;
+	}
+	
+	@ExceptionHandler(Exception.class)
+	public ModelAndView handleException(Exception e) {
+		ModelAndView mav = new ModelAndView();
+		mav.addObject("exception", e);
+		mav.setViewName("/common/error.jsp");
+		return mav;
+	}
+}
+
+```
+
+
+
+### 2) XML기반의 예외 처리
+
+- 어노테이션 기반의 예외처리보다 쉬운 방법
+  - CommonExceptionHandler처럼 예외 처리 클래스를 별도로 구현하지 않아도 됨
+  - 단지 XML설정만 처리하면 됨
+- `presentation-layer.xml`파일에 `SimpleMappingExceptionResolver` 클래스를 `<bean>`등록하기
+  - ArithmethicException이 발생하면 arithmethicException.jsp화면이 전송
+  - NullPointerException이 발생하면 nullPointerException.jsp화면이 전송
+  - IllegalArgumentException이 발생하면 defaultErrorView로 설정한 error.jsp화면 전송
+
+```xml
+...
+
+	<!-- 예외 처리 설정 -->
+	<bean id="exceptionResolver" class="org.springframework.web.servlet.handler.SimpleMappingExceptionResolver">
+		<property name="exceptionMappings">
+			<props>
+				<prop key="java.lang.ArithmethicException">
+					common/arithmeticError.jsp
+				</prop>
+				<prop key="java.lang.NullPointerException">
+					common/nullPointerError.jsp
+				</prop>
+			</props>
+		</property>
+		<property name="defaultErrorView" value="common/error.jsp"/>
+	</bean>
+	...
+```
+
