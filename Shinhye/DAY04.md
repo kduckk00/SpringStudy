@@ -1228,3 +1228,384 @@ public class CommonExceptionHandler {
 	...
 ```
 
+
+
+# CLASS06 다국어처리
+
+- 다국어 지원 = 국제화
+  - 하나의 JSP를 다양한 언어로 서비스하는 것을 의미
+  - Struts 프레임워크와 매우 유사
+
+
+
+## 메시지 파일 작성하기
+
+- 사용자가 원하는 언어로 메시지 출력하려면 각 언어에 따른 메시지 파일 작성해야 함
+  - 메시지 파일의 확장자 `.properties`
+  - 파일명은 언어에 해당하는 Locale정보 결합해 작성
+
+
+
+## MessageSource 등록
+
+- 스프링 설정 파일에 이 메시지 파일들을 읽어 들이는 MessageSource클래스를 `<bean>`에 등록하기
+  - `presentation-layer.xml`
+
+```xml
+...
+
+	<!--  다국어 설정 -->
+	<!--  MessageSource 등록 -->
+	<bean id="messageSource" class="org.springframework.context.support.ResourceBundleMessageSource">
+		<property name="basenames">
+			<list>
+				<value>message.messageSource</value>
+			</list>
+		</property>
+	</bean>
+	
+	
+	...
+```
+
+
+
+- ResourceBundleMessageSource클래스를 `<bean>`등록할 때, 이름이 `messageSource`로 고정됨
+  - 이 객체는 setBasenames()메소드를 통해 메시지 파일들이 저장된 배열 객체를 넘겨줘야 함
+  - MessageSource에 메시지 파일을 등록할 때, `.properties`확장자 생략
+    - 실제 해당 파일을 찾을 대는 확장자 `.properties`를 추가하여 검색하면 됨
+- 메시지 파일은 여러 개에 나눠 관리
+  - 일반적으로 컴포넌트 하나당 하나의 메시지 파일 작성
+  - 새로운 언어가 추가되거나 삭제될 때에도 스프링 설정 파일 수정할 필요X
+  - 단, 어떤 메시지 파일이 적용되는지는 기본 언어 설정과 Locale변화에 따라 해당 언어의 메시지가 자동으로 선택됨
+
+
+
+### Locale이란?
+
+> 사용자의 언어, 국가뿐 아니라 사용자 인터페이스에서 사용자가 선호하는 사항을 지정한 매개변수의 모임
+
+- 즉, 사용자로 하여금 프로그램 수행시 Locale에 의해 입맛에 맞는 환경을 선택할 수 있도록 만든 것
+
+
+
+
+
+## LocaleResolver등록
+
+- 웹 브라우저가 서버에 요청하면 브라우저의 Locale정보가 HTTP요청 메시지 헤더에 자동으로 설정되어 전송
+  - 이때, 스프링은 LocaleResolver를 통해 클라이언트의 Locale정보 추출
+  - 이  Locale정보에 해당하는 언어의 메시지 적용
+
+
+
+### LocaleResolver 종류
+
+- 기본적으로 4개의 LocaleResolver지원
+  - 스프링 설정 파일에 LocaleResolver 등록되어 있지 않으면 기본으로 `AcceptHeaderLocaleResolver`적용
+  - `SessionLocaleResolver`를 가장 많이 사용
+    - 스프링 설정 파일에 등록하기
+    - 고정된 이름인 `localeResolver`로  등록해야 함
+
+|     LocaleResolver종류     |                          기능 설명                           |
+| :------------------------: | :----------------------------------------------------------: |
+| AcceptHeaderLocaleResolver | 브라우저에서 전송된 HTTP요청 헤더에서 Accept-Language에 설정된 Locale로 메시지 적용 |
+|    CookieLocaleResolver    |        Cookie에 저장된 Locale정보 추출해 메시지 적용         |
+|   SessionLocaleResolver    |      HttpSession에 지정된 Locale정보 추출해 메시지 적용      |
+|    FixedLocaleResolver     |            웹 요청과 무관하게 특정 Locale로 고정             |
+
+
+
+## Locale변경하기
+
+- 특정 언어로 화면을 보다가 해당 화면의 언어를 변경하고 싶을 때 사용
+  - LocaleChangeInterceptor클래스 사용
+  - HandlerInterceptor인터페이스를 구현한 클래스
+  - 스프링 설정 파일에 인터셉터로 등록해야 함
+- `presentation-layer.xml`
+  - `<beans>` 루트 엘리먼트에 mvc네임스페이스 추가해야`<mvc:interceptors>`엘리먼트 사용가능
+    - 그래야 LocaleChangeInterceptor객체를 인터셉터로 등록가능
+      - Setter주입으로  paramName값을  "lang"으로 지정
+      - 클라이언트로부터 "lang"이라는 파라미터로 특정 Locale이 전송되면 해당 Locale로 변경하겠다는 설정
+
+```xml
+...
+
+	
+	<!-- LocaleChangeInterceptor 등록 -->
+	<mvc:interceptors>
+		<bean class="org.springframework.web.servlet.i18n.LocaleChangeInterceptor">
+			<property name="paramName" value="lang" />
+		</bean>
+	</mvc:interceptors>
+	
+	...
+```
+
+
+
+## JSP파일 설정
+
+### 1) 로그인 화면 처리
+
+- JSP파일에서 메시지 파일에 등록한 메시지로 화면을 구성하려면 스프링에서 제공하는 태그 라이브러리를 이용해야 함
+  - taglib지시자 반드시 선언
+- `<spring:message/>` 태그의 code속성 값으로 메시지 파일에 등록된 메시지 키를 등록
+  - 그러면 Locale에 해당하는 메시지 출력가능
+
+
+
+### 2) 글 목록 화면 처리
+
+- Locale이 영어인 상태에서 로그인에 성공하면 글 목록 화면도 영어 화면으로 유지되어야 함
+
+
+
+# CLASS07 데이터 변환
+
+- JSON : 다른 시스템과 정보를 주고받을 때 사용하는 포맷
+
+
+
+## JSON으로 변환하기
+
+- BoardVO 객체가 가진 각 변수와 변수에 저장된 값이 키:값 형태로 표현
+- 검색결과가 하나가 아닌 여러 개일 때는 배열로 처리됨
+
+
+
+## Jackson2 라이브러리 내려받기
+
+- 검색 결과를 JSON 데이터로 변환하려면 Jackson2라이브러리 필요
+  - pom.xml파일에 `<dependendy>`추가
+
+```xml
+...
+<!-- Jackson2 -->
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-databind</artifactId>
+			<version>2.7.2</version>
+		</dependency>
+		
+		...
+```
+
+
+
+
+
+## HttpMessageConverter 등록
+
+- 일반적으로 브라우저에서 서블릿, JSP파일 요청하면
+  - 서버는 클라이언트가 요청한 서블릿이나 JSP를 찾아 실행
+  - 그 **실행 결과를 Http응답 프로토콜 메시지 바디에 저장하여 브라우저에 전송**
+  - `<html>`관련 태그들
+    - 하지만 이 응답 결과를 HTML이 아닌 JSON이나 XML로 변환하여 메시지 바디에 저장하려면 변환기(Converter)사용해야 함
+
+- 스프링은 HttpMessageConvertor를 구현한 다양한 변환기 제공
+  - 이 변환기를 이용하면 자바 객체를 다양한 타입으로 변환하여 HTTP응답 바디에 설정할 수 있음
+- `MappingJackson2HttpMessageConverter`
+  - **자바 객체를 JSON응답 바디로 변환할 때 사용**
+  - 스프링 설정 파일에 등록하기
+  - 이후에 XML 변환도 처리할 예정이므로 `<mvc:annotation-driven>`설정하기
+- `presentation-layer.xml`
+  - 아래처럼 설정시 HttpMessageConverter를 구현한 모든 변환기 생성
+  - 이후, XML변환에 필요한 변환기도 자동 등록
+
+```xml
+<mvc:annotation-driven></mvc:annotation-driven>
+```
+
+
+
+## 링크 추가 및 Controller수정
+
+- 사용자가 JSON형태로 글 목록을 요청할 수 있도록 index.jsp파일에 링크 수정필요
+- `BoardController.java`에 글 목록 변환 처리 요청 처리할 메소드 추가하기
+  - dataTransform() 메소드는 글 목록을 검색하여 리턴하는 getBoardList()메소드와 같음
+  - `@ResopnseBody`어노테이션 사용
+    - **자바 객체를 Http응답 프로토콜의 몸체로 변환하기 위해 사용**
+
+```java
+...
+
+	
+	@RequestMapping("/dataTransform.do")
+	@ResponseBody
+	public List<BoardVO> dataTransform(BoardVO vo) {
+		vo.setSearchCondition("TITLE");
+		vo.setSearchKeyword("");
+		List<BoardVO> boardList = boardService.getBoardList(vo);
+		return boardList;
+	}
+	
+	
+	...
+```
+
+
+
+- 잎서, 스프링 컨테이너가 MappingJackson2HttpMessageConverter 변환기 생성
+  - 스프링 설정 파일에 `<mvc:annotation-driven>`추가
+  - `@ResponseBody`가 적용된 dataTransform()메소드의 실행결과는 JSON으로 변환되어 HTTP 응답 보디에 설정될 것
+
+
+
+## 실행 결과 확인
+
+- 크롬 브라우저에서 확인하기
+
+![image-20210225024533997](images/image-20210225024533997.png)
+
+- 실행 결과에 검색 조건, 검색 키워드, 파일 업로드 정보까지 포함
+  - 이 정보들은 출력 결과에서 제외하는 것이 맞음
+  - `BoardVO.java`수정하기
+    - Getter메소드수정
+
+```java
+...
+
+	@JsonIgnore
+	public MultipartFile getUploadFile() {
+		return uploadFile;
+	}
+
+	public void setUploadFile(MultipartFile uploadFile) {
+		this.uploadFile = uploadFile;
+	}
+	
+	@JsonIgnore
+	public String getSearchCondition() {
+		return searchCondition;
+	}
+
+	public void setSearchCondition(String searchCondition) {
+		this.searchCondition = searchCondition;
+	}
+
+	@JsonIgnore
+	public String getSearchKeyword() {
+		return searchKeyword;
+	}
+	
+	...
+```
+
+
+
+- `@JsonIgnore`
+  - <u>자바 객체를 JSON으로 변환할 때, 특정 변수를 변환에서 제외시킴</u>
+  - **일반 어노테이션과 달리, Getter 메소드 위에 설정해야 함**
+  - 실행하면, 아래처럼 세 가지 정보(searchCondition, searchKeyword, uploadFile)는 포함X
+
+![image-20210225025103668](images/image-20210225025103668.png)
+
+
+
+## XML로 변환하기
+
+### JAXB 2 설정 추가
+
+#### 1) BoardVO 클래스 수정
+
+- 자바 객체를 XML형태의 데이터로 벼놘하려면 JAXB2 API에서 제공하는 어노테이션 사용
+  - 이 API는 자바6 이후 버전에 기본으로 포함되어 있음
+- 검색 결과를 저장하는 BoardVO클래스에 JAXB2어노테이션 추가하기
+- `BoardVO`
+  - `@XmlAccessorType` : BoardVO객체를 XML로 변환할 수 있다는 의미
+  - `XmlAccessType.FIELD` : 이 객체가 가진 필드, 즉 변수들을 자동으로 자식 엘리먼트로 표현
+  - `@XmlAttribute` : seq를 속성으로 표현하라는 의미
+  - `@XmlTransient` : XML변환에서 제외하라는 의미
+    - JSON변환에서 `@JsonIgnore`와 같은 개념의 어노테이션
+  - `import java.util.Date;` : 특정 자바 객체를 XML로 변환하려면 반드시 해당 클래스에 기본 생성자가 있어야 함
+    - regDate변수를 기본 생성자가 있는 java.util.Date 타입의 변수로 변경
+    - 기존의 java.sql.Date클래스엔 기본 생성자 존재하지 않음
+
+```java
+...
+
+import java.util.Date;
+
+...
+    
+@XmlAccessorType(XmlAccessType.FIELD)
+public class BoardVO { // =BoardDTO, 데이터 전달목적
+	@XmlAttribute
+	private int seq;
+	private String title;
+	private String writer;
+	private String content;
+	private Date regDate;
+	private int cnt;
+	@XmlTransient
+	private String searchCondition;
+	@XmlTransient
+	private String searchKeyword;
+	@XmlTransient
+	private MultipartFile uploadFile;
+	
+	...
+```
+
+
+
+#### 2) BoardListVO 추가
+
+- XML문서는 반드시 단 하나의 루트 엘리먼트를 가져야 함
+- BoardVO는 하나의 게시글 정보를 저장하려고 사용하는 객체
+  - 하지만, 게시글 목록을 XML로 표현해야 하므로 BoardVO 객체 여러 개를 포함하면서 루트 엘리먼트로 사용할 또 다른 자바 클래스 필요
+  - 루트 엘리먼트로 사용할 BoardListVO클래스 추가 작성
+
+- `BoardListVO`
+  - JAXB2관련 어노테이션 : 루트 엘리먼트에 해당하는 객체
+  - `@XmlRootElement(name = "boardList")` : 루트 엘리먼트 이름을 boardList로 설정하겠다는 의미
+  - `@XmlElement(name = "board")`
+    - 이 설정이 없다면 boardList가 엘리먼트 이름으로 사용됨
+    - 엘리먼트 이름을 boardList에서 board로 변경
+
+```java
+package com.springbook.biz.board;
+
+import java.util.List;
+
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
+
+@XmlRootElement(name = "boardList")
+@XmlAccessorType(XmlAccessType.FIELD)
+public class BoardListVO {
+	@XmlElement(name = "board")
+	private List<BoardVO> boardList;
+	
+	public List<BoardVO> getBoardList() {
+		return boardList;
+	}
+	
+	public void setBoardList(List<BoardVO> boardList) {
+		this.boardList = boardList;
+	}
+
+}
+
+```
+
+
+
+### Controller 수정
+
+- 검색 결과를 JSON형태로 변환하여 처리함
+  - 이때, 자바 객체를 JSON응답 바디로 변환해주는 MappingJackson2HttpMessageConverter를 스프링 설정 파일에 추가필요
+  - 이를 `<mvc:annotation-driven>`설정으로 대체함
+    - 이 설정은 자바 객체를 XML 응답 바디로 변환할 때 사용하는 Jaxb2RootElementHttpMessageConverter도 같이 등록
+
+![image-20210225204538302](images/image-20210225204538302.png)
+
+
+
+- boardList가 루트 앨리먼트로 사용
+  - 여러 개의 board엘리먼트를 자식으로 가짐
+  - seq정보는 속성(attribute)로 사용됨
+  - 이 모든 설정이 JAXB2 API에서 제공하는 어노테이션을 설정했기 때문
