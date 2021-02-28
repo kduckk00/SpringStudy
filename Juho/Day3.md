@@ -4,7 +4,7 @@
 
 **1. Model 1 아키텍처 구조**
 
-![image-20210222144200457](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210222144200457.png)
+![image-20210222144200457](./typora-user-images/image-20210222144200457.png)
 
 1. **JavaBeans(Model)** : DB 연동에 사용되는 자바 객체
 2. **JSP파일(Controller + View)**
@@ -23,7 +23,7 @@
 
 1. 로그인 화면
 
-   ![image-20210222153337750](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210222153337750.png)
+   ![image-20210222153337750](./typora-user-images/image-20210222153337750.png)
 
    
 
@@ -67,13 +67,13 @@
 
 **3. 글 목록**
 
-![image-20210222162237302](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210222162237302.png)
+![image-20210222162237302](./typora-user-images/image-20210222162237302.png)
 
 
 
 **4. 글 상세**
 
-![image-20210222183733355](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210222183733355.png)
+![image-20210222183733355](./typora-user-images/image-20210222183733355.png)
 
 
 
@@ -81,7 +81,7 @@
 
 **1. Model 2 아키텍처 구조**
 
-![image-20210222212205839](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210222212205839.png)
+![image-20210222212205839](./typora-user-images/image-20210222212205839.png)
 
 - Model 1 카이텍처에서 JSP 파일에 있는 자바 코드만 Controller로 이동하면 Model 2 아키텍처
 
@@ -194,7 +194,7 @@
   -> 유지보수 어려움
 - Spring MVC와 동일한 구조의 프레임워크를 구현할 것
 
-![image-20210223095225226](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210223095225226.png)
+![image-20210223095225226](./typora-user-images/image-20210223095225226.png)
 
 | 클래스            | 기능                                                         |
 | ----------------- | ------------------------------------------------------------ |
@@ -347,7 +347,7 @@
 
 **1. Spring MVC 수행 흐름**
 
-![image-20210223113944528](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210223113944528.png)
+![image-20210223113944528](./typora-user-images/image-20210223113944528.png)
 
 
 
