@@ -132,7 +132,7 @@ public class InsertBoardController {
 
 **1. 비즈니스 컴포넌트 사용**
 
-![image-20210227140738323](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210227140738323.png)
+![image-20210227140738323](./typora-user-images/image-20210227140738323.png)
 
 - Controller의 모든 메소드가 요청 처리 시 DAO 객체 직접 이용
   -> 비즈니스 컴포넌트를 이용해 DAO 객체를 사용해야 함
@@ -148,7 +148,7 @@ public class InsertBoardController {
 
 1. **2-Layered 아키텍처**
 
-   ![image-20210227142633114](C:\Users\seokj\AppData\Roaming\Typora\typora-user-images\image-20210227142633114.png)
+   ![image-20210227142633114](./typora-user-images/image-20210227142633114.png)
 
    - 프레임워크 기반의 웹 프로젝트의 일반적 구조
    - Controller 객체가 생성되기 전에 Controller에서 사용할 비즈니스 컴포넌트를 메모리에 생성해야 함
